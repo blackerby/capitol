@@ -1,6 +1,7 @@
 // TODO: is "joint" necessary?
 // TODO: make congress and bill_num "0" unrepresentable
 
+use anyhow;
 use winnow::ascii::alpha0;
 use winnow::ascii::digit1;
 use winnow::error::ErrMode;
@@ -45,7 +46,7 @@ fn parse_legislation_type<'s>(input: &mut &'s str) -> PResult<LegislationType<'s
     })
 }
 
-fn parse<'s>(input: &mut &'s str) -> PResult<Citation<'s>> {
+fn parse_citation<'s>(input: &mut &'s str) -> PResult<Citation<'s>> {
     let (congress, chamber, leg_type, number) = (
         parse_congress,
         parse_chamber,
@@ -98,6 +99,14 @@ struct Citation<'s> {
     number: &'s str,
 }
 
+impl<'s> Citation<'s> {
+    fn parse(&mut input: &mut &'s str) -> anyhow::Result<Self> {
+        parse_citation
+            .parse(input)
+            .map_err(|e| anyhow::format_err!("{e}"))
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -105,8 +114,7 @@ mod test {
     #[test]
     fn test_parse_house_bill() {
         let mut input = "118hr8070";
-        let output = parse.parse_next(&mut input).unwrap();
-        assert_eq!(input, "");
+        let output = Citation::parse(&mut input).unwrap();
         assert_eq!(
             output,
             Citation {
@@ -121,8 +129,7 @@ mod test {
     #[test]
     fn test_parse_house_bill_short() {
         let mut input = "118h8070";
-        let output = parse.parse_next(&mut input).unwrap();
-        assert_eq!(input, "");
+        let output = Citation::parse(&mut input).unwrap();
         assert_eq!(
             output,
             Citation {
@@ -137,8 +144,7 @@ mod test {
     #[test]
     fn test_parse_house_simple_res() {
         let mut input = "103hres15";
-        let output = parse.parse_next(&mut input).unwrap();
-        assert_eq!(input, "");
+        let output = Citation::parse(&mut input).unwrap();
         assert_eq!(
             output,
             Citation {
@@ -153,8 +159,7 @@ mod test {
     #[test]
     fn test_parse_house_simple_res_short() {
         let mut input = "103he15";
-        let output = parse.parse_next(&mut input).unwrap();
-        assert_eq!(input, "");
+        let output = Citation::parse(&mut input).unwrap();
         assert_eq!(
             output,
             Citation {
