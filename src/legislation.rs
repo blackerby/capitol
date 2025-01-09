@@ -1,21 +1,24 @@
 // TODO: is "joint" necessary?
-// TODO: make congress and bill_num "0" unrepresentable
 
 use anyhow;
 use winnow::ascii::alpha0;
 use winnow::ascii::digit1;
+use winnow::error::ContextError;
 use winnow::error::ErrMode;
 use winnow::token::one_of;
 use winnow::{PResult, Parser};
 
-fn parse_congress<'s>(input: &mut &'s str) -> PResult<Congress<'s>> {
-    let congress = digit1.parse_next(input).map_err(ErrMode::cut)?;
+fn parse_positive_integer<'s>(input: &mut &'s str) -> PResult<&'s str> {
+    let int = digit1.parse_next(input).map_err(ErrMode::cut)?;
 
-    if congress == "0" {
-        todo!()
+    if int == "0" {
+        Err(ErrMode::Cut(ContextError::new()))
     } else {
-        Ok(Congress(congress))
+        Ok(int)
     }
+}
+fn parse_congress<'s>(input: &mut &'s str) -> PResult<Congress<'s>> {
+    parse_positive_integer.parse_next(input).map(Congress)
 }
 
 fn parse_chamber(input: &mut &str) -> PResult<Chamber> {
@@ -51,21 +54,17 @@ fn parse_citation<'s>(input: &mut &'s str) -> PResult<Citation<'s>> {
         parse_congress,
         parse_chamber,
         parse_legislation_type,
-        digit1,
+        parse_positive_integer,
     )
         .parse_next(input)
         .map_err(ErrMode::cut)?;
 
-    if number == "0" {
-        todo!()
-    } else {
-        Ok(Citation {
-            congress,
-            chamber,
-            leg_type,
-            number,
-        })
-    }
+    Ok(Citation {
+        congress,
+        chamber,
+        leg_type,
+        number,
+    })
 }
 
 #[derive(Debug, PartialEq)]
@@ -169,5 +168,21 @@ mod test {
                 number: "15"
             }
         )
+    }
+
+    #[test]
+    fn test_zero_congress_is_error() {
+        let mut input = "0hr1";
+        let output = Citation::parse(&mut input);
+
+        assert!(output.is_err());
+    }
+
+    #[test]
+    fn test_zero_bill_num_is_error() {
+        let mut input = "1hr0";
+        let output = Citation::parse(&mut input);
+
+        assert!(output.is_err());
     }
 }
