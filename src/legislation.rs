@@ -1,5 +1,3 @@
-// TODO: is "joint" necessary?
-
 use anyhow;
 use winnow::ascii::alpha0;
 use winnow::ascii::digit1;
@@ -22,13 +20,12 @@ fn parse_congress<'s>(input: &mut &'s str) -> PResult<Congress<'s>> {
 }
 
 fn parse_chamber(input: &mut &str) -> PResult<Chamber> {
-    let chamber = one_of(('h', 'H', 's', 'S', 'j', 'J'))
+    let chamber = one_of(('h', 'H', 's', 'S'))
         .parse_next(input)
         .map_err(ErrMode::cut)?;
 
     Ok(match chamber {
         'h' | 'H' => Chamber::House(chamber),
-        'j' | 'J' => Chamber::Joint(chamber),
         's' | 'S' => Chamber::Senate(chamber),
         _ => unreachable!(),
     })
