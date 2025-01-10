@@ -89,6 +89,10 @@ impl<'s> Congress<'s> {
             format!("{self}th")
         }
     }
+
+    fn to_number(&self) -> usize {
+        self.0.parse::<usize>().unwrap()
+    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -231,5 +235,11 @@ mod test {
         let congress = Congress("116");
         let ordinal = congress.as_ordinal();
         assert_eq!("116th", ordinal);
+    }
+
+    #[test]
+    fn test_congress_to_number() {
+        let congress = Congress("119");
+        assert_eq!(119, congress.to_number());
     }
 }
