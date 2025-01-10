@@ -45,7 +45,7 @@ fn parse_legislation_type(input: &mut &str) -> PResult<LegislationType> {
     }
 }
 
-fn parse_citation<'s>(input: &mut &'s str) -> PResult<Citation<'s>> {
+fn parse_citation<'s>(input: &mut &'s str) -> PResult<Legislation<'s>> {
     let (congress, chamber, leg_type, number) = (
         parse_congress,
         parse_chamber,
@@ -55,7 +55,7 @@ fn parse_citation<'s>(input: &mut &'s str) -> PResult<Citation<'s>> {
         .parse_next(input)
         .map_err(ErrMode::cut)?;
 
-    Ok(Citation {
+    Ok(Legislation {
         congress,
         chamber,
         leg_type,
@@ -86,14 +86,14 @@ enum LegislationType {
 }
 
 #[derive(Debug, PartialEq)]
-struct Citation<'s> {
+struct Legislation<'s> {
     congress: Congress<'s>,
     chamber: Chamber,
     leg_type: LegislationType,
     number: &'s str,
 }
 
-impl<'s> Citation<'s> {
+impl<'s> Legislation<'s> {
     fn parse(&mut input: &mut &'s str) -> anyhow::Result<Self> {
         parse_citation
             .parse(input)
@@ -108,10 +108,10 @@ mod test {
     #[test]
     fn test_parse_house_bill() {
         let mut input = "118hr8070";
-        let output = Citation::parse(&mut input).unwrap();
+        let output = Legislation::parse(&mut input).unwrap();
         assert_eq!(
             output,
-            Citation {
+            Legislation {
                 congress: Congress("118"),
                 chamber: Chamber::House,
                 leg_type: LegislationType::Bill,
@@ -123,10 +123,10 @@ mod test {
     #[test]
     fn test_parse_house_bill_short() {
         let mut input = "118h8070";
-        let output = Citation::parse(&mut input).unwrap();
+        let output = Legislation::parse(&mut input).unwrap();
         assert_eq!(
             output,
-            Citation {
+            Legislation {
                 congress: Congress("118"),
                 chamber: Chamber::House,
                 leg_type: LegislationType::Bill,
@@ -138,10 +138,10 @@ mod test {
     #[test]
     fn test_parse_house_simple_res() {
         let mut input = "103hres15";
-        let output = Citation::parse(&mut input).unwrap();
+        let output = Legislation::parse(&mut input).unwrap();
         assert_eq!(
             output,
-            Citation {
+            Legislation {
                 congress: Congress("103"),
                 chamber: Chamber::House,
                 leg_type: LegislationType::Resolution(ResolutionType::Simple),
@@ -153,10 +153,10 @@ mod test {
     #[test]
     fn test_parse_house_simple_res_short() {
         let mut input = "103he15";
-        let output = Citation::parse(&mut input).unwrap();
+        let output = Legislation::parse(&mut input).unwrap();
         assert_eq!(
             output,
-            Citation {
+            Legislation {
                 congress: Congress("103"),
                 chamber: Chamber::House,
                 leg_type: LegislationType::Resolution(ResolutionType::Simple),
@@ -168,7 +168,7 @@ mod test {
     #[test]
     fn test_zero_congress_is_error() {
         let mut input = "0hr1";
-        let output = Citation::parse(&mut input);
+        let output = Legislation::parse(&mut input);
 
         assert!(output.is_err());
     }
@@ -176,7 +176,7 @@ mod test {
     #[test]
     fn test_zero_bill_num_is_error() {
         let mut input = "1hr0";
-        let output = Citation::parse(&mut input);
+        let output = Legislation::parse(&mut input);
 
         assert!(output.is_err());
     }
@@ -184,7 +184,7 @@ mod test {
     #[test]
     fn test_sr_is_error() {
         let mut input = "1sr1";
-        let output = Citation::parse(&mut input);
+        let output = Legislation::parse(&mut input);
 
         assert!(output.is_err());
     }
