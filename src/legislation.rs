@@ -20,22 +20,24 @@ fn parse_congress<'s>(input: &mut &'s str) -> PResult<Congress<'s>> {
     parse_positive_integer.parse_next(input).map(Congress)
 }
 
-fn parse_chamber(input: &mut &str) -> PResult<Chamber> {
-    let chamber = alt((Caseless("s"), terminated(Caseless("h"), opt(Caseless("r")))))
-        .parse_next(input)
-        .map_err(ErrMode::cut)?;
+fn senate(input: &mut &str) -> PResult<Chamber> {
+    Caseless("s").parse_next(input).map(|_| Chamber::Senate)
+}
 
-    match chamber {
-        "H" | "h" => Ok(Chamber::House),
-        "s" | "S" => Ok(Chamber::Senate),
-        _ => Err(ErrMode::Cut(ContextError::new())),
-    }
+fn house(input: &mut &str) -> PResult<Chamber> {
+    terminated(Caseless("h"), opt(Caseless("r")))
+        .parse_next(input)
+        .map(|_| Chamber::House)
+}
+
+fn parse_chamber(input: &mut &str) -> PResult<Chamber> {
+    alt((senate, house)).parse_next(input).map_err(ErrMode::cut)
 }
 
 fn parse_legislation_type(input: &mut &str) -> PResult<LegislationType> {
     let leg_type = alpha0.parse_next(input).map_err(ErrMode::cut)?;
     match leg_type {
-        "e" | "res" => Ok(LegislationType::Resolution(ResolutionType::Simple)),
+        "e" | "es" => Ok(LegislationType::Resolution(ResolutionType::Simple)),
         "c" | "cres" | "conres" => Ok(LegislationType::Resolution(ResolutionType::Concurrent)),
         "j" | "jres" => Ok(LegislationType::Resolution(ResolutionType::Joint)),
         "" => Ok(LegislationType::Bill),
