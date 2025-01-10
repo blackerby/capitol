@@ -93,6 +93,11 @@ impl<'s> Congress<'s> {
     fn to_number(&self) -> usize {
         self.0.parse::<usize>().unwrap()
     }
+
+    fn years(&self) -> (usize, usize) {
+        let second = self.to_number() * 2 + crate::FIRST_CONGRESS - 1;
+        (second - 1, second)
+    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -241,5 +246,14 @@ mod test {
     fn test_congress_to_number() {
         let congress = Congress("119");
         assert_eq!(119, congress.to_number());
+    }
+
+    #[test]
+    fn test_congress_years() {
+        let congress = Congress("119");
+        assert_eq!((2025, 2026), congress.years());
+
+        let congress = Congress("118");
+        assert_eq!((2023, 2024), congress.years());
     }
 }
