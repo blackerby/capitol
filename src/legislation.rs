@@ -1,3 +1,8 @@
+// TODO: use this as a guide to generating string representation of legislation
+// https://www.congress.gov/help/citation-guide
+
+use std::fmt::Display;
+
 use anyhow;
 use winnow::ascii::alpha0;
 use winnow::ascii::digit1;
@@ -65,6 +70,26 @@ fn parse_citation<'s>(input: &mut &'s str) -> PResult<Legislation<'s>> {
 
 #[derive(Debug, PartialEq)]
 struct Congress<'s>(&'s str);
+
+impl<'s> Display for Congress<'s> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl<'s> Congress<'s> {
+    fn as_ordinal(&self) -> String {
+        if self.0.ends_with("1") {
+            format!("{self}st")
+        } else if self.0.ends_with("2") {
+            format!("{self}nd")
+        } else if self.0.ends_with("3") {
+            format!("{self}rd")
+        } else {
+            format!("{self}th")
+        }
+    }
+}
 
 #[derive(Debug, PartialEq)]
 enum Chamber {
@@ -187,5 +212,24 @@ mod test {
         let output = Legislation::parse(&mut input);
 
         assert!(output.is_err());
+    }
+
+    #[test]
+    fn test_congress_as_ordinal() {
+        let congress = Congress("111");
+        let ordinal = congress.as_ordinal();
+        assert_eq!("111st", ordinal);
+
+        let congress = Congress("112");
+        let ordinal = congress.as_ordinal();
+        assert_eq!("112nd", ordinal);
+
+        let congress = Congress("113");
+        let ordinal = congress.as_ordinal();
+        assert_eq!("113rd", ordinal);
+
+        let congress = Congress("116");
+        let ordinal = congress.as_ordinal();
+        assert_eq!("116th", ordinal);
     }
 }
