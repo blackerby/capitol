@@ -182,4 +182,12 @@ mod test {
 
         assert!(output.is_err());
     }
+
+    #[test]
+    fn test_sr_is_error() {
+        let mut input = "1sr1";
+        let output = Citation::parse(&mut input);
+
+        assert!(output.is_err());
+    }
 }
