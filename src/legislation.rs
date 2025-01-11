@@ -188,6 +188,21 @@ mod test {
     }
 
     #[test]
+    fn test_parse_senate_simple_res() {
+        let mut input = "103sres15";
+        let output = Legislation::parse(&mut input).unwrap();
+        assert_eq!(
+            output,
+            Legislation {
+                congress: Congress("103"),
+                chamber: Chamber::Senate,
+                leg_type: LegislationType::Resolution(ResolutionType::Simple),
+                number: "15"
+            }
+        )
+    }
+
+    #[test]
     fn test_parse_house_simple_res_short() {
         let mut input = "103he15";
         let output = Legislation::parse(&mut input).unwrap();
