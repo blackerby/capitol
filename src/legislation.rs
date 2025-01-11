@@ -1,6 +1,8 @@
 // TODO: use this as a guide to generating string representation of legislation
 // https://www.congress.gov/help/citation-guide
 
+// TODO: understand and improve Winnow errors
+
 use crate::{
     parse_chamber, parse_congress, parse_positive_integer, AbbreviateType, Chamber, Congress,
     Reference, Url, BASE_URL,
@@ -14,13 +16,13 @@ use winnow::{
     PResult, Parser,
 };
 
-fn parse_legislation_type(input: &mut &str) -> PResult<LegislationType> {
+fn parse_legislation_type<'s>(input: &mut &'s str) -> PResult<LegislationType<'s>> {
     let leg_type = alpha0.parse_next(input).map_err(ErrMode::cut)?;
     match leg_type {
-        "e" | "es" => Ok(LegislationType::Resolution(ResolutionType::Simple)),
+        "e" | "res" => Ok(LegislationType::Resolution(ResolutionType::Simple)),
         "c" | "cres" | "conres" => Ok(LegislationType::Resolution(ResolutionType::Concurrent)),
         "j" | "jres" => Ok(LegislationType::Resolution(ResolutionType::Joint)),
-        "" => Ok(LegislationType::Bill),
+        "" | "r" => Ok(LegislationType::Bill(leg_type)),
         _ => Err(ErrMode::Cut(ContextError::new())),
     }
 }
@@ -34,6 +36,12 @@ fn parse_citation<'s>(input: &mut &'s str) -> PResult<Legislation<'s>> {
     )
         .parse_next(input)
         .map_err(ErrMode::cut)?;
+
+    if let LegislationType::Bill("r") = leg_type {
+        if chamber == Chamber::Senate {
+            return Err(ErrMode::Cut(ContextError::new()));
+        }
+    }
 
     Ok(Legislation {
         congress,
@@ -51,18 +59,18 @@ enum ResolutionType {
 }
 
 #[derive(Debug, PartialEq)]
-enum LegislationType {
-    Bill,
+enum LegislationType<'s> {
+    Bill(&'s str),
     Resolution(ResolutionType),
 }
 
-impl Display for LegislationType {
+impl<'s> Display for LegislationType<'s> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
             "{}",
             match self {
-                Self::Bill => String::from("bill"),
+                Self::Bill(_) => String::from("bill"),
                 Self::Resolution(r) => format!(
                     "{}resolution",
                     match r {
@@ -80,20 +88,20 @@ impl Display for LegislationType {
 struct Legislation<'s> {
     congress: Congress<'s>,
     chamber: Chamber,
-    leg_type: LegislationType,
+    leg_type: LegislationType<'s>,
     number: &'s str,
 }
 
 impl<'s> AbbreviateType for Legislation<'s> {
     fn abbreviate_type(&self) -> &str {
         match (&self.chamber, &self.leg_type) {
-            (Chamber::House, LegislationType::Bill) => "H.R.",
+            (Chamber::House, LegislationType::Bill(_)) => "H.R.",
             (Chamber::House, LegislationType::Resolution(r)) => match r {
                 ResolutionType::Simple => "H.Res",
                 ResolutionType::Concurrent => "H.Con.Res",
                 ResolutionType::Joint => "H.J.Res",
             },
-            (Chamber::Senate, LegislationType::Bill) => "S.",
+            (Chamber::Senate, LegislationType::Bill(_)) => "S.",
             (Chamber::Senate, LegislationType::Resolution(r)) => match r {
                 ResolutionType::Simple => "S.Res",
                 ResolutionType::Concurrent => "S.Con.Res",
@@ -151,7 +159,7 @@ mod test {
             Legislation {
                 congress: Congress("118"),
                 chamber: Chamber::House,
-                leg_type: LegislationType::Bill,
+                leg_type: LegislationType::Bill("r"),
                 number: "8070"
             }
         )
@@ -166,7 +174,7 @@ mod test {
             Legislation {
                 congress: Congress("118"),
                 chamber: Chamber::House,
-                leg_type: LegislationType::Bill,
+                leg_type: LegislationType::Bill(""),
                 number: "8070"
             }
         )

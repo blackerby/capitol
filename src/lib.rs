@@ -8,7 +8,7 @@ use std::sync::LazyLock;
 
 use winnow::{
     ascii::{digit1, Caseless},
-    combinator::{alt, opt, terminated},
+    combinator::alt,
     error::{ContextError, ErrMode},
     PResult, Parser,
 };
@@ -107,9 +107,7 @@ fn senate(input: &mut &str) -> PResult<Chamber> {
 }
 
 fn house(input: &mut &str) -> PResult<Chamber> {
-    terminated(Caseless("h"), opt(Caseless("r")))
-        .parse_next(input)
-        .map(|_| Chamber::House)
+    Caseless("h").parse_next(input).map(|_| Chamber::House)
 }
 
 fn parse_chamber(input: &mut &str) -> PResult<Chamber> {
