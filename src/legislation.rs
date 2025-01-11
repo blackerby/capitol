@@ -1,51 +1,18 @@
 // TODO: use this as a guide to generating string representation of legislation
 // https://www.congress.gov/help/citation-guide
 
-use crate::{BASE_URL, CURRENT_CONGRESS, FIRST_CONGRESS};
+use crate::{
+    parse_chamber, parse_congress, parse_positive_integer, AbbreviateType, Chamber, Congress,
+    Reference, Url, BASE_URL,
+};
 use std::fmt::Display;
 
 use anyhow;
 use winnow::{
-    ascii::{alpha0, digit1, Caseless},
-    combinator::{alt, opt, terminated},
+    ascii::alpha0,
     error::{ContextError, ErrMode},
     PResult, Parser,
 };
-
-// TODO: test contents of parse errors
-fn parse_positive_integer<'s>(input: &mut &'s str) -> PResult<&'s str> {
-    let int = digit1.parse_next(input).map_err(ErrMode::cut)?;
-
-    if int == "0" {
-        Err(ErrMode::Cut(ContextError::new()))
-    } else {
-        Ok(int)
-    }
-}
-
-fn parse_congress<'s>(input: &mut &'s str) -> PResult<Congress<'s>> {
-    let maybe_congress = parse_positive_integer.parse_next(input)?;
-    let int = maybe_congress.parse::<usize>().unwrap();
-    if int <= *CURRENT_CONGRESS {
-        Ok(Congress(maybe_congress))
-    } else {
-        Err(ErrMode::Cut(ContextError::new()))
-    }
-}
-
-fn senate(input: &mut &str) -> PResult<Chamber> {
-    Caseless("s").parse_next(input).map(|_| Chamber::Senate)
-}
-
-fn house(input: &mut &str) -> PResult<Chamber> {
-    terminated(Caseless("h"), opt(Caseless("r")))
-        .parse_next(input)
-        .map(|_| Chamber::House)
-}
-
-fn parse_chamber(input: &mut &str) -> PResult<Chamber> {
-    alt((senate, house)).parse_next(input).map_err(ErrMode::cut)
-}
 
 fn parse_legislation_type(input: &mut &str) -> PResult<LegislationType> {
     let leg_type = alpha0.parse_next(input).map_err(ErrMode::cut)?;
@@ -74,57 +41,6 @@ fn parse_citation<'s>(input: &mut &'s str) -> PResult<Legislation<'s>> {
         leg_type,
         number,
     })
-}
-
-#[derive(Debug, PartialEq)]
-struct Congress<'s>(&'s str);
-
-impl<'s> Display for Congress<'s> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
-
-impl<'s> Congress<'s> {
-    fn as_ordinal(&self) -> String {
-        if self.0.ends_with("1") {
-            format!("{self}st")
-        } else if self.0.ends_with("2") {
-            format!("{self}nd")
-        } else if self.0.ends_with("3") {
-            format!("{self}rd")
-        } else {
-            format!("{self}th")
-        }
-    }
-
-    fn to_number(&self) -> usize {
-        self.0.parse::<usize>().unwrap()
-    }
-
-    fn years(&self) -> (usize, usize) {
-        let second = self.to_number() * 2 + FIRST_CONGRESS - 1;
-        (second - 1, second)
-    }
-}
-
-#[derive(Debug, PartialEq)]
-enum Chamber {
-    House,
-    Senate,
-}
-
-impl Display for Chamber {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                Self::House => "house",
-                Self::Senate => "senate",
-            }
-        )
-    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -168,6 +84,25 @@ struct Legislation<'s> {
     number: &'s str,
 }
 
+impl<'s> AbbreviateType for Legislation<'s> {
+    fn abbreviate_type(&self) -> &str {
+        match (&self.chamber, &self.leg_type) {
+            (Chamber::House, LegislationType::Bill) => "H.R.",
+            (Chamber::House, LegislationType::Resolution(r)) => match r {
+                ResolutionType::Simple => "H.Res",
+                ResolutionType::Concurrent => "H.Con.Res",
+                ResolutionType::Joint => "H.J.Res",
+            },
+            (Chamber::Senate, LegislationType::Bill) => "S.",
+            (Chamber::Senate, LegislationType::Resolution(r)) => match r {
+                ResolutionType::Simple => "S.Res",
+                ResolutionType::Concurrent => "S.Con.Res",
+                ResolutionType::Joint => "S.J.Res",
+            },
+        }
+    }
+}
+
 impl<'s> Legislation<'s> {
     fn parse(&mut input: &mut &'s str) -> anyhow::Result<Self> {
         parse_citation
@@ -176,11 +111,19 @@ impl<'s> Legislation<'s> {
     }
 }
 
-trait Url {
-    fn to_url(&self) -> String;
+impl<'s> Reference for Legislation<'s> {
+    fn reference(&self) -> String {
+        let (start, end) = self.congress.years();
+        format!(
+            "{}{} – {} Congress ({}-{})",
+            self.abbreviate_type(),
+            self.number,
+            self.congress.as_ordinal(),
+            start,
+            end
+        )
+    }
 }
-
-// TODO: add FullCitation trait
 
 impl<'s> Url for Legislation<'s> {
     fn to_url(&self) -> String {
@@ -197,6 +140,7 @@ impl<'s> Url for Legislation<'s> {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::CURRENT_CONGRESS;
 
     #[test]
     fn test_parse_house_bill() {
@@ -353,5 +297,13 @@ mod test {
             url,
             "https://www.congress.gov/bill/113rd-congress/senate-joint-resolution/230"
         );
+    }
+
+    #[test]
+    fn test_leg_reference() {
+        let legislation = Legislation::parse(&mut "118hr870").unwrap();
+        let reference = legislation.reference();
+
+        assert_eq!("H.R.870 – 118th Congress (2023-2024)", reference.as_str());
     }
 }
