@@ -1,7 +1,7 @@
 // TODO: use this as a guide to generating string representation of legislation
 // https://www.congress.gov/help/citation-guide
 
-use crate::{CURRENT_CONGRESS, FIRST_CONGRESS};
+use crate::{BASE_URL, CURRENT_CONGRESS, FIRST_CONGRESS};
 use std::fmt::Display;
 
 use anyhow;
@@ -114,6 +114,19 @@ enum Chamber {
     Senate,
 }
 
+impl Display for Chamber {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Self::House => "house",
+                Self::Senate => "senate",
+            }
+        )
+    }
+}
+
 #[derive(Debug, PartialEq)]
 enum ResolutionType {
     Simple,
@@ -125,6 +138,26 @@ enum ResolutionType {
 enum LegislationType {
     Bill,
     Resolution(ResolutionType),
+}
+
+impl Display for LegislationType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Self::Bill => String::from("bill"),
+                Self::Resolution(r) => format!(
+                    "{}resolution",
+                    match r {
+                        ResolutionType::Simple => "",
+                        ResolutionType::Concurrent => "concurrent-",
+                        ResolutionType::Joint => "joint-",
+                    }
+                ),
+            }
+        )
+    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -140,6 +173,24 @@ impl<'s> Legislation<'s> {
         parse_citation
             .parse(input)
             .map_err(|e| anyhow::format_err!("{e}"))
+    }
+}
+
+trait Url {
+    fn to_url(&self) -> String;
+}
+
+// TODO: add FullCitation trait
+
+impl<'s> Url for Legislation<'s> {
+    fn to_url(&self) -> String {
+        format!(
+            "{BASE_URL}/bill/{}-congress/{}-{}/{}",
+            self.congress.as_ordinal(),
+            self.chamber,
+            self.leg_type,
+            self.number
+        )
     }
 }
 
@@ -271,5 +322,36 @@ mod test {
         let bad_cite = format!("{future_congress}hr51");
         let result = Legislation::parse(&mut bad_cite.as_str());
         assert!(result.is_err())
+    }
+
+    #[test]
+    fn test_to_url() {
+        let legislation = Legislation::parse(&mut "118hr870").unwrap();
+        let url = legislation.to_url();
+        assert_eq!(
+            url,
+            "https://www.congress.gov/bill/118th-congress/house-bill/870"
+        );
+
+        let legislation = Legislation::parse(&mut "118hres230").unwrap();
+        let url = legislation.to_url();
+        assert_eq!(
+            url,
+            "https://www.congress.gov/bill/118th-congress/house-resolution/230"
+        );
+
+        let legislation = Legislation::parse(&mut "118sc230").unwrap();
+        let url = legislation.to_url();
+        assert_eq!(
+            url,
+            "https://www.congress.gov/bill/118th-congress/senate-concurrent-resolution/230"
+        );
+
+        let legislation = Legislation::parse(&mut "113sj230").unwrap();
+        let url = legislation.to_url();
+        assert_eq!(
+            url,
+            "https://www.congress.gov/bill/113rd-congress/senate-joint-resolution/230"
+        );
     }
 }

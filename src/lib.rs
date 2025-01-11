@@ -7,5 +7,6 @@ pub(crate) const FIRST_CONGRESS: usize = 1789;
 static CURRENT_YEAR: LazyLock<usize> = LazyLock::new(|| chrono::Utc::now().year() as usize);
 pub(crate) static CURRENT_CONGRESS: LazyLock<usize> =
     LazyLock::new(|| *CURRENT_YEAR - FIRST_CONGRESS / 2 + 1);
+pub(crate) const BASE_URL: &str = "https://www.congress.gov";
 
 mod legislation;
