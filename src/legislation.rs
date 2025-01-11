@@ -1,6 +1,7 @@
 // TODO: use this as a guide to generating string representation of legislation
 // https://www.congress.gov/help/citation-guide
 
+use crate::CURRENT_CONGRESS;
 use std::fmt::Display;
 
 use anyhow;
@@ -12,6 +13,7 @@ use winnow::error::ContextError;
 use winnow::error::ErrMode;
 use winnow::{PResult, Parser};
 
+// TODO: test contents of parse errors
 fn parse_positive_integer<'s>(input: &mut &'s str) -> PResult<&'s str> {
     let int = digit1.parse_next(input).map_err(ErrMode::cut)?;
 
@@ -21,8 +23,15 @@ fn parse_positive_integer<'s>(input: &mut &'s str) -> PResult<&'s str> {
         Ok(int)
     }
 }
+
 fn parse_congress<'s>(input: &mut &'s str) -> PResult<Congress<'s>> {
-    parse_positive_integer.parse_next(input).map(Congress)
+    let maybe_congress = parse_positive_integer.parse_next(input)?;
+    let int = maybe_congress.parse::<usize>().unwrap();
+    if int <= *CURRENT_CONGRESS {
+        Ok(Congress(maybe_congress))
+    } else {
+        Err(ErrMode::Cut(ContextError::new()))
+    }
 }
 
 fn senate(input: &mut &str) -> PResult<Chamber> {
@@ -255,5 +264,13 @@ mod test {
 
         let congress = Congress("118");
         assert_eq!((2023, 2024), congress.years());
+    }
+
+    #[test]
+    fn test_future_congress_is_err() {
+        let future_congress = *CURRENT_CONGRESS + 1;
+        let bad_cite = format!("{future_congress}hr51");
+        let result = Legislation::parse(&mut bad_cite.as_str());
+        assert!(result.is_err())
     }
 }
