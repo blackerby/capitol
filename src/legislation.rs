@@ -1,17 +1,16 @@
 // TODO: use this as a guide to generating string representation of legislation
 // https://www.congress.gov/help/citation-guide
 
-use crate::CURRENT_CONGRESS;
+use crate::{CURRENT_CONGRESS, FIRST_CONGRESS};
 use std::fmt::Display;
 
 use anyhow;
-use winnow::ascii::alpha0;
-use winnow::ascii::digit1;
-use winnow::ascii::Caseless;
-use winnow::combinator::{alt, opt, terminated};
-use winnow::error::ContextError;
-use winnow::error::ErrMode;
-use winnow::{PResult, Parser};
+use winnow::{
+    ascii::{alpha0, digit1, Caseless},
+    combinator::{alt, opt, terminated},
+    error::{ContextError, ErrMode},
+    PResult, Parser,
+};
 
 // TODO: test contents of parse errors
 fn parse_positive_integer<'s>(input: &mut &'s str) -> PResult<&'s str> {
@@ -104,7 +103,7 @@ impl<'s> Congress<'s> {
     }
 
     fn years(&self) -> (usize, usize) {
-        let second = self.to_number() * 2 + crate::FIRST_CONGRESS - 1;
+        let second = self.to_number() * 2 + FIRST_CONGRESS - 1;
         (second - 1, second)
     }
 }
