@@ -37,43 +37,10 @@ fn parse_bill_version<'s>(input: &mut &'s str) -> PResult<Option<BillVersion<'s>
     let bill_version = alt(BILL_VERSION).parse_next(input).map_err(ErrMode::cut)?;
 
     match bill_version {
-        "as" => Ok(Some(BillVersion(bill_version))),
-        "ash" => Ok(Some(BillVersion(bill_version))),
-        "ath" => Ok(Some(BillVersion(bill_version))),
-        "ats" => Ok(Some(BillVersion(bill_version))),
-        "cdh" => Ok(Some(BillVersion(bill_version))),
-        "cds" => Ok(Some(BillVersion(bill_version))),
-        "cph" => Ok(Some(BillVersion(bill_version))),
-        "cps" => Ok(Some(BillVersion(bill_version))),
-        "eah" => Ok(Some(BillVersion(bill_version))),
-        "eas" => Ok(Some(BillVersion(bill_version))),
-        "eh" => Ok(Some(BillVersion(bill_version))),
-        "enr" => Ok(Some(BillVersion(bill_version))),
-        "es" => Ok(Some(BillVersion(bill_version))),
-        "fph" => Ok(Some(BillVersion(bill_version))),
-        "fps" => Ok(Some(BillVersion(bill_version))),
-        "hds" => Ok(Some(BillVersion(bill_version))),
-        "ih" => Ok(Some(BillVersion(bill_version))),
-        "iph" => Ok(Some(BillVersion(bill_version))),
-        "ips" => Ok(Some(BillVersion(bill_version))),
-        "is" => Ok(Some(BillVersion(bill_version))),
-        "lth" => Ok(Some(BillVersion(bill_version))),
-        "lts" => Ok(Some(BillVersion(bill_version))),
-        "pap" => Ok(Some(BillVersion(bill_version))),
-        "pcs" => Ok(Some(BillVersion(bill_version))),
-        "pp" => Ok(Some(BillVersion(bill_version))),
-        "rch" => Ok(Some(BillVersion(bill_version))),
-        "rcs" => Ok(Some(BillVersion(bill_version))),
-        "rds" => Ok(Some(BillVersion(bill_version))),
-        "rfh" => Ok(Some(BillVersion(bill_version))),
-        "rfs" => Ok(Some(BillVersion(bill_version))),
-        "rh" => Ok(Some(BillVersion(bill_version))),
-        "rhuc" => Ok(Some(BillVersion(bill_version))),
-        "rih" => Ok(Some(BillVersion(bill_version))),
-        "rs" => Ok(Some(BillVersion(bill_version))),
-        "rth" => Ok(Some(BillVersion(bill_version))),
-        "rts" => Ok(Some(BillVersion(bill_version))),
-        "sc" => Ok(Some(BillVersion(bill_version))),
+        "as" | "ash" | "ath" | "ats" | "cdh" | "cds" | "cph" | "cps" | "eah" | "eas" | "eh"
+        | "enr" | "es" | "fph" | "fps" | "hds" | "ih" | "iph" | "ips" | "is" | "lth" | "lts"
+        | "pap" | "pcs" | "pp" | "rch" | "rcs" | "rds" | "rfh" | "rfs" | "rh" | "rhuc" | "rih"
+        | "rs" | "rth" | "rts" | "sc" => Ok(Some(BillVersion(bill_version))),
         "" => Ok(None),
         _ => unreachable!(),
     }
@@ -228,7 +195,7 @@ mod test {
                 number: "8070",
                 bill_version: None
             }
-        );
+        )
     }
 
     #[test]
@@ -244,7 +211,7 @@ mod test {
                 number: "8070",
                 bill_version: Some(BillVersion("ih"))
             }
-        );
+        )
     }
 
     #[test]
@@ -260,7 +227,7 @@ mod test {
                 number: "8070",
                 bill_version: None
             }
-        );
+        )
     }
 
     #[test]
@@ -276,7 +243,7 @@ mod test {
                 number: "15",
                 bill_version: None
             }
-        );
+        )
     }
 
     #[test]
@@ -292,7 +259,7 @@ mod test {
                 number: "15",
                 bill_version: None,
             }
-        );
+        )
     }
 
     #[test]
@@ -308,7 +275,7 @@ mod test {
                 number: "15",
                 bill_version: None
             }
-        );
+        )
     }
 
     #[test]
@@ -340,7 +307,7 @@ mod test {
         let future_congress = *CURRENT_CONGRESS + 1;
         let bad_cite = format!("{future_congress}hr51");
         let result = Legislation::parse(&mut bad_cite.as_str());
-        assert!(result.is_err());
+        assert!(result.is_err())
     }
 
     #[test]
