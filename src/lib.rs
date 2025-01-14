@@ -30,11 +30,11 @@ impl Display for Congress<'_> {
 
 impl Congress<'_> {
     fn as_ordinal(&self) -> String {
-        if self.0.ends_with("1") {
+        if self.0.ends_with('1') {
             format!("{self}st")
-        } else if self.0.ends_with("2") {
+        } else if self.0.ends_with('2') {
             format!("{self}nd")
-        } else if self.0.ends_with("3") {
+        } else if self.0.ends_with('3') {
             format!("{self}rd")
         } else {
             format!("{self}th")

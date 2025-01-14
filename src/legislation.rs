@@ -228,7 +228,7 @@ mod test {
                 number: "8070",
                 bill_version: None
             }
-        )
+        );
     }
 
     #[test]
@@ -244,7 +244,7 @@ mod test {
                 number: "8070",
                 bill_version: Some(BillVersion("ih"))
             }
-        )
+        );
     }
 
     #[test]
@@ -260,7 +260,7 @@ mod test {
                 number: "8070",
                 bill_version: None
             }
-        )
+        );
     }
 
     #[test]
@@ -276,7 +276,7 @@ mod test {
                 number: "15",
                 bill_version: None
             }
-        )
+        );
     }
 
     #[test]
@@ -292,7 +292,7 @@ mod test {
                 number: "15",
                 bill_version: None,
             }
-        )
+        );
     }
 
     #[test]
@@ -308,7 +308,7 @@ mod test {
                 number: "15",
                 bill_version: None
             }
-        )
+        );
     }
 
     #[test]
@@ -340,7 +340,7 @@ mod test {
         let future_congress = *CURRENT_CONGRESS + 1;
         let bad_cite = format!("{future_congress}hr51");
         let result = Legislation::parse(&mut bad_cite.as_str());
-        assert!(result.is_err())
+        assert!(result.is_err());
     }
 
     #[test]
