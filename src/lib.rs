@@ -79,7 +79,7 @@ trait Reference {
 }
 
 trait Url {
-    fn to_url(&self) -> String;
+    fn to_url(&self, with_ver: bool) -> String;
 }
 
 fn parse_positive_integer<'s>(input: &mut &'s str) -> PResult<&'s str> {
@@ -112,4 +112,43 @@ fn house(input: &mut &str) -> PResult<Chamber> {
 
 fn parse_chamber(input: &mut &str) -> PResult<Chamber> {
     alt((senate, house)).parse_next(input).map_err(ErrMode::cut)
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_congress_as_ordinal() {
+        let congress = Congress("111");
+        let ordinal = congress.as_ordinal();
+        assert_eq!("111st", ordinal);
+
+        let congress = Congress("112");
+        let ordinal = congress.as_ordinal();
+        assert_eq!("112nd", ordinal);
+
+        let congress = Congress("113");
+        let ordinal = congress.as_ordinal();
+        assert_eq!("113rd", ordinal);
+
+        let congress = Congress("116");
+        let ordinal = congress.as_ordinal();
+        assert_eq!("116th", ordinal);
+    }
+
+    #[test]
+    fn test_congress_to_number() {
+        let congress = Congress("119");
+        assert_eq!(119, congress.to_number());
+    }
+
+    #[test]
+    fn test_congress_years() {
+        let congress = Congress("119");
+        assert_eq!((2025, 2026), congress.years());
+
+        let congress = Congress("118");
+        assert_eq!((2023, 2024), congress.years());
+    }
 }
