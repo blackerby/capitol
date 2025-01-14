@@ -38,45 +38,43 @@ fn parse_bill_version<'s>(input: &mut &'s str) -> PResult<Option<BillVersion<'s>
     let bill_version = alt(BILL_VERSION).parse_next(input).map_err(ErrMode::cut)?;
 
     match bill_version {
-        "as" => Ok(Some(BillVersion::AmendmentOrderedPrinted(bill_version))),
-        "ash" => Ok(Some(BillVersion::AdditionalSponsorsHouse(bill_version))),
-        "ath" => Ok(Some(BillVersion::AgreedToHouse(bill_version))),
-        "ats" => Ok(Some(BillVersion::AgreedToSenate(bill_version))),
-        "cdh" => Ok(Some(BillVersion::CommitteeDischargedHouse(bill_version))),
-        "cds" => Ok(Some(BillVersion::CommitteeDischargedSenate(bill_version))),
-        "cph" => Ok(Some(BillVersion::ConsideredPassedHouse(bill_version))),
-        "cps" => Ok(Some(BillVersion::ConsideredPassedSenate(bill_version))),
-        "eah" => Ok(Some(BillVersion::EngrossedAmendmentHouse(bill_version))),
-        "eas" => Ok(Some(BillVersion::EngrossedAmendmentSenate(bill_version))),
-        "eh" => Ok(Some(BillVersion::EngrossedHouse(bill_version))),
-        "enr" => Ok(Some(BillVersion::Enrolled(bill_version))),
-        "es" => Ok(Some(BillVersion::EngrossedSenate(bill_version))),
-        "fph" => Ok(Some(BillVersion::FailedPassageHouse(bill_version))),
-        "fps" => Ok(Some(BillVersion::FailedPassageSenate(bill_version))),
-        "hds" => Ok(Some(BillVersion::HeldDeskSenate(bill_version))),
-        "ih" => Ok(Some(BillVersion::IntroducedHouse(bill_version))),
-        "iph" => Ok(Some(BillVersion::IndefinitelyPostponedHouse(bill_version))),
-        "ips" => Ok(Some(BillVersion::IndefinitelyPostponedSenate(bill_version))),
-        "is" => Ok(Some(BillVersion::IntroducedSenate(bill_version))),
-        "lth" => Ok(Some(BillVersion::LaidTableHouse(bill_version))),
-        "lts" => Ok(Some(BillVersion::LaidTableSenate(bill_version))),
-        "pap" => Ok(Some(BillVersion::PrintedAsPassed(bill_version))),
-        "pcs" => Ok(Some(BillVersion::PlacedCalendarSenate(bill_version))),
-        "pp" => Ok(Some(BillVersion::PublicPrint(bill_version))),
-        "rch" => Ok(Some(BillVersion::ReferenceChangeHouse(bill_version))),
-        "rcs" => Ok(Some(BillVersion::ReferenceChangeSenate(bill_version))),
-        "rds" => Ok(Some(BillVersion::ReceivedSenate(bill_version))),
-        "rfh" => Ok(Some(BillVersion::ReferredHouse(bill_version))),
-        "rfs" => Ok(Some(BillVersion::ReferredSenate(bill_version))),
-        "rh" => Ok(Some(BillVersion::ReportedHouse(bill_version))),
-        "rhuc" => Ok(Some(BillVersion::ReturnedHouseUnanimousConsent(
-            bill_version,
-        ))),
-        "rih" => Ok(Some(BillVersion::ReferralInstructionsHouse(bill_version))),
-        "rs" => Ok(Some(BillVersion::ReportedSenate(bill_version))),
-        "rth" => Ok(Some(BillVersion::ReferredCommitteeHouse(bill_version))),
-        "rts" => Ok(Some(BillVersion::ReferredCommitteeSenate(bill_version))),
-        "sc" => Ok(Some(BillVersion::SponsorChange(bill_version))),
+        "as" => Ok(Some(BillVersion(bill_version))),
+        "ash" => Ok(Some(BillVersion(bill_version))),
+        "ath" => Ok(Some(BillVersion(bill_version))),
+        "ats" => Ok(Some(BillVersion(bill_version))),
+        "cdh" => Ok(Some(BillVersion(bill_version))),
+        "cds" => Ok(Some(BillVersion(bill_version))),
+        "cph" => Ok(Some(BillVersion(bill_version))),
+        "cps" => Ok(Some(BillVersion(bill_version))),
+        "eah" => Ok(Some(BillVersion(bill_version))),
+        "eas" => Ok(Some(BillVersion(bill_version))),
+        "eh" => Ok(Some(BillVersion(bill_version))),
+        "enr" => Ok(Some(BillVersion(bill_version))),
+        "es" => Ok(Some(BillVersion(bill_version))),
+        "fph" => Ok(Some(BillVersion(bill_version))),
+        "fps" => Ok(Some(BillVersion(bill_version))),
+        "hds" => Ok(Some(BillVersion(bill_version))),
+        "ih" => Ok(Some(BillVersion(bill_version))),
+        "iph" => Ok(Some(BillVersion(bill_version))),
+        "ips" => Ok(Some(BillVersion(bill_version))),
+        "is" => Ok(Some(BillVersion(bill_version))),
+        "lth" => Ok(Some(BillVersion(bill_version))),
+        "lts" => Ok(Some(BillVersion(bill_version))),
+        "pap" => Ok(Some(BillVersion(bill_version))),
+        "pcs" => Ok(Some(BillVersion(bill_version))),
+        "pp" => Ok(Some(BillVersion(bill_version))),
+        "rch" => Ok(Some(BillVersion(bill_version))),
+        "rcs" => Ok(Some(BillVersion(bill_version))),
+        "rds" => Ok(Some(BillVersion(bill_version))),
+        "rfh" => Ok(Some(BillVersion(bill_version))),
+        "rfs" => Ok(Some(BillVersion(bill_version))),
+        "rh" => Ok(Some(BillVersion(bill_version))),
+        "rhuc" => Ok(Some(BillVersion(bill_version))),
+        "rih" => Ok(Some(BillVersion(bill_version))),
+        "rs" => Ok(Some(BillVersion(bill_version))),
+        "rth" => Ok(Some(BillVersion(bill_version))),
+        "rts" => Ok(Some(BillVersion(bill_version))),
+        "sc" => Ok(Some(BillVersion(bill_version))),
         "" => Ok(None),
         _ => unreachable!(),
     }
@@ -203,7 +201,7 @@ impl<'s> Url for Legislation<'s> {
 
         if with_ver {
             base.push_str("/text/");
-            base.push_str(self.bill_version.as_ref().unwrap().tag());
+            base.push_str(self.bill_version.as_ref().unwrap().to_string().as_str());
         }
 
         base
@@ -211,87 +209,11 @@ impl<'s> Url for Legislation<'s> {
 }
 
 #[derive(Debug, PartialEq)]
-enum BillVersion<'s> {
-    AmendmentOrderedPrinted(&'s str),
-    AdditionalSponsorsHouse(&'s str),
-    AgreedToHouse(&'s str),
-    AgreedToSenate(&'s str),
-    CommitteeDischargedHouse(&'s str),
-    CommitteeDischargedSenate(&'s str),
-    ConsideredPassedHouse(&'s str),
-    ConsideredPassedSenate(&'s str),
-    EngrossedAmendmentHouse(&'s str),
-    EngrossedAmendmentSenate(&'s str),
-    EngrossedHouse(&'s str),
-    Enrolled(&'s str),
-    EngrossedSenate(&'s str),
-    FailedPassageHouse(&'s str),
-    FailedPassageSenate(&'s str),
-    HeldDeskSenate(&'s str),
-    IntroducedHouse(&'s str),
-    IndefinitelyPostponedHouse(&'s str),
-    IndefinitelyPostponedSenate(&'s str),
-    IntroducedSenate(&'s str),
-    LaidTableHouse(&'s str),
-    LaidTableSenate(&'s str),
-    PrintedAsPassed(&'s str),
-    PlacedCalendarSenate(&'s str),
-    PublicPrint(&'s str),
-    ReferenceChangeHouse(&'s str),
-    ReferenceChangeSenate(&'s str),
-    ReceivedSenate(&'s str),
-    ReferredHouse(&'s str),
-    ReferredSenate(&'s str),
-    ReportedHouse(&'s str),
-    ReturnedHouseUnanimousConsent(&'s str),
-    ReferralInstructionsHouse(&'s str),
-    ReportedSenate(&'s str),
-    ReferredCommitteeHouse(&'s str),
-    ReferredCommitteeSenate(&'s str),
-    SponsorChange(&'s str),
-}
+struct BillVersion<'s>(&'s str);
 
-impl<'s> BillVersion<'s> {
-    fn tag(&self) -> &'s str {
-        match self {
-            Self::AmendmentOrderedPrinted(s)
-            | Self::AdditionalSponsorsHouse(s)
-            | Self::AgreedToHouse(s)
-            | Self::AgreedToSenate(s)
-            | Self::CommitteeDischargedHouse(s)
-            | Self::CommitteeDischargedSenate(s)
-            | Self::ConsideredPassedHouse(s)
-            | Self::ConsideredPassedSenate(s)
-            | Self::EngrossedAmendmentHouse(s)
-            | Self::EngrossedAmendmentSenate(s)
-            | Self::EngrossedHouse(s)
-            | Self::Enrolled(s)
-            | Self::EngrossedSenate(s)
-            | Self::FailedPassageHouse(s)
-            | Self::FailedPassageSenate(s)
-            | Self::HeldDeskSenate(s)
-            | Self::IntroducedHouse(s)
-            | Self::IndefinitelyPostponedHouse(s)
-            | Self::IndefinitelyPostponedSenate(s)
-            | Self::IntroducedSenate(s)
-            | Self::LaidTableHouse(s)
-            | Self::LaidTableSenate(s)
-            | Self::PrintedAsPassed(s)
-            | Self::PlacedCalendarSenate(s)
-            | Self::PublicPrint(s)
-            | Self::ReferenceChangeHouse(s)
-            | Self::ReferenceChangeSenate(s)
-            | Self::ReceivedSenate(s)
-            | Self::ReferredHouse(s)
-            | Self::ReferredSenate(s)
-            | Self::ReportedHouse(s)
-            | Self::ReturnedHouseUnanimousConsent(s)
-            | Self::ReferralInstructionsHouse(s)
-            | Self::ReportedSenate(s)
-            | Self::ReferredCommitteeHouse(s)
-            | Self::ReferredCommitteeSenate(s)
-            | Self::SponsorChange(s) => s,
-        }
+impl<'s> Display for BillVersion<'s> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
 
@@ -327,7 +249,7 @@ mod test {
                 chamber: Chamber::House,
                 leg_type: LegislationType::Bill("r"),
                 number: "8070",
-                bill_version: Some(BillVersion::IntroducedHouse("ih"))
+                bill_version: Some(BillVersion("ih"))
             }
         )
     }
