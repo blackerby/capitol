@@ -16,7 +16,7 @@ use winnow::{
     PResult, Parser,
 };
 
-const BILL_VERSION: [&str; 38] = [
+const BILL_VERSIONS: [&str; 38] = [
     "as", "ash", "ath", "ats", "cdh", "cds", "cph", "cps", "eah", "eas", "eh", "enr", "es", "fph",
     "fps", "hds", "ih", "iph", "ips", "is", "lth", "lts", "pap", "pcs", "pp", "rch", "rcs", "rds",
     "rfh", "rfs", "rh", "rhuc", "rih", "rs", "rth", "rts", "sc", "",
@@ -34,7 +34,7 @@ fn parse_legislation_type<'s>(input: &mut &'s str) -> PResult<LegislationType<'s
 }
 
 fn parse_bill_version<'s>(input: &mut &'s str) -> PResult<Option<BillVersion<'s>>> {
-    let bill_version = alt(BILL_VERSION).parse_next(input).map_err(ErrMode::cut)?;
+    let bill_version = alt(BILL_VERSIONS).parse_next(input).map_err(ErrMode::cut)?;
 
     if bill_version.is_empty() {
         Ok(None)
