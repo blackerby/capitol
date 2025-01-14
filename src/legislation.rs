@@ -36,7 +36,7 @@ fn parse_legislation_type<'s>(input: &mut &'s str) -> PResult<LegislationType<'s
 fn parse_bill_version<'s>(input: &mut &'s str) -> PResult<Option<BillVersion<'s>>> {
     let bill_version = alt(BILL_VERSION).parse_next(input).map_err(ErrMode::cut)?;
 
-    if bill_version == "" {
+    if bill_version.is_empty() {
         Ok(None)
     } else {
         Ok(Some(BillVersion(bill_version)))
@@ -192,7 +192,7 @@ mod test {
                 number: "8070",
                 bill_version: None
             }
-        )
+        );
     }
 
     #[test]
@@ -208,7 +208,7 @@ mod test {
                 number: "8070",
                 bill_version: Some(BillVersion("ih"))
             }
-        )
+        );
     }
 
     #[test]
@@ -224,7 +224,7 @@ mod test {
                 number: "8070",
                 bill_version: None
             }
-        )
+        );
     }
 
     #[test]
@@ -240,7 +240,7 @@ mod test {
                 number: "15",
                 bill_version: None
             }
-        )
+        );
     }
 
     #[test]
@@ -256,7 +256,7 @@ mod test {
                 number: "15",
                 bill_version: None,
             }
-        )
+        );
     }
 
     #[test]
@@ -272,7 +272,7 @@ mod test {
                 number: "15",
                 bill_version: None
             }
-        )
+        );
     }
 
     #[test]
@@ -304,7 +304,7 @@ mod test {
         let future_congress = *CURRENT_CONGRESS + 1;
         let bad_cite = format!("{future_congress}hr51");
         let result = Legislation::parse(&mut bad_cite.as_str());
-        assert!(result.is_err())
+        assert!(result.is_err());
     }
 
     #[test]
