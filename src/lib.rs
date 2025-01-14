@@ -22,13 +22,13 @@ pub(crate) const BASE_URL: &str = "https://www.congress.gov";
 #[derive(Debug, PartialEq)]
 struct Congress<'s>(&'s str);
 
-impl<'s> Display for Congress<'s> {
+impl Display for Congress<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.0)
     }
 }
 
-impl<'s> Congress<'s> {
+impl Congress<'_> {
     fn as_ordinal(&self) -> String {
         if self.0.ends_with("1") {
             format!("{self}st")

@@ -9,7 +9,6 @@ use crate::{
 };
 use std::fmt::Display;
 
-use anyhow;
 use winnow::{
     ascii::alpha0,
     combinator::alt,
@@ -119,7 +118,7 @@ enum LegislationType<'s> {
     Resolution(ResolutionType),
 }
 
-impl<'s> Display for LegislationType<'s> {
+impl Display for LegislationType<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
@@ -148,7 +147,7 @@ struct Legislation<'s> {
     bill_version: Option<BillVersion<'s>>,
 }
 
-impl<'s> AbbreviateType for Legislation<'s> {
+impl AbbreviateType for Legislation<'_> {
     fn abbreviate_type(&self) -> &str {
         match (&self.chamber, &self.leg_type) {
             (Chamber::House, LegislationType::Bill(_)) => "H.R.",
@@ -175,7 +174,7 @@ impl<'s> Legislation<'s> {
     }
 }
 
-impl<'s> Reference for Legislation<'s> {
+impl Reference for Legislation<'_> {
     fn reference(&self) -> String {
         let (start, end) = self.congress.years();
         format!(
@@ -189,7 +188,7 @@ impl<'s> Reference for Legislation<'s> {
     }
 }
 
-impl<'s> Url for Legislation<'s> {
+impl Url for Legislation<'_> {
     fn to_url(&self, with_ver: bool) -> String {
         let mut base = format!(
             "{BASE_URL}/bill/{}-congress/{}-{}/{}",
@@ -201,7 +200,7 @@ impl<'s> Url for Legislation<'s> {
 
         if with_ver {
             base.push_str("/text/");
-            base.push_str(self.bill_version.as_ref().unwrap().to_string().as_str());
+            base.push_str(self.bill_version.as_ref().unwrap().0);
         }
 
         base
@@ -210,12 +209,6 @@ impl<'s> Url for Legislation<'s> {
 
 #[derive(Debug, PartialEq)]
 struct BillVersion<'s>(&'s str);
-
-impl<'s> Display for BillVersion<'s> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
 
 #[cfg(test)]
 mod test {
