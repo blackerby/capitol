@@ -196,6 +196,22 @@ mod test {
     }
 
     #[test]
+    fn test_parse_senate_bill() {
+        let mut input = "118s15";
+        let output = Legislation::parse(&mut input).unwrap();
+        assert_eq!(
+            output,
+            Legislation {
+                congress: Congress("118"),
+                chamber: Chamber::Senate,
+                leg_type: LegislationType::Bill(""),
+                number: "15",
+                bill_version: None
+            }
+        );
+    }
+
+    #[test]
     fn test_parse_house_bill_with_version() {
         let mut input = "118hr8070ih";
         let output = Legislation::parse(&mut input).unwrap();
@@ -294,6 +310,14 @@ mod test {
     #[test]
     fn test_sr_is_error() {
         let mut input = "1sr1";
+        let output = Legislation::parse(&mut input);
+
+        assert!(output.is_err());
+    }
+
+    #[test]
+    fn test_sn_is_error() {
+        let mut input = "1sn1";
         let output = Legislation::parse(&mut input);
 
         assert!(output.is_err());
