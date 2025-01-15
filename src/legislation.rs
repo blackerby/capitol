@@ -3,11 +3,18 @@
 
 // TODO: understand and improve Winnow errors
 
+// TODO: citation style argument for `full_cite`
+// NOTE: APA, MLA, CMOS all need full date of introduction, not just year
+
 use crate::{
     parse_chamber, parse_congress, parse_positive_integer, AbbreviateType, Chamber, Congress,
-    Reference, Url, BASE_URL,
+    Reference, Url, API_BASE_URL, BASE_URL,
 };
 use std::fmt::Display;
+
+use serde::Deserialize;
+// #[cfg(feature = "ureq")]
+use ureq;
 
 use winnow::{
     ascii::alpha0,
@@ -15,6 +22,18 @@ use winnow::{
     error::{ContextError, ErrMode},
     PResult, Parser,
 };
+
+#[derive(Deserialize)]
+struct Response {
+    bill: Bill,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct Bill {
+    title: String,
+    introduced_date: String,
+}
 
 const BILL_VERSIONS: [&str; 38] = [
     "as", "ash", "ath", "ats", "cdh", "cds", "cph", "cps", "eah", "eas", "eh", "enr", "es", "fph",
@@ -136,6 +155,32 @@ impl<'s> Legislation<'s> {
             .parse(input)
             .map_err(|e| anyhow::format_err!("{e}"))
     }
+
+    fn full_cite(&self, with_ver: bool) -> anyhow::Result<String> {
+        // get title and year from introduced date
+        let congress = &self.congress.as_str();
+        // let bill_type = &self.leg_type;
+        let bill_number = &self.number;
+        // TODO: handle API key more appropriately (user set env var; default to `DEMO_KEY`)
+        // TODO: set API key as header
+        // TODO: better handle string representation of legislation types
+        // TODO: improve serde usage -- is Response necessary?
+        let url = format!("{API_BASE_URL}/bill/{congress}/hr/{bill_number}?api_key=DEMO_KEY");
+        let response: Response = ureq::get(url.as_str()).call()?.into_json()?;
+        let bill = response.bill;
+        let year = &bill.introduced_date[..4];
+
+        let citation = format!(
+            "{}: {}, {} ({}), {}.",
+            self.reference(),
+            bill.title,
+            self.short_reference(),
+            year,
+            self.to_url(with_ver)
+        );
+
+        Ok(citation)
+    }
 }
 
 impl Reference for Legislation<'_> {
@@ -148,6 +193,15 @@ impl Reference for Legislation<'_> {
             self.congress.as_ordinal(),
             start,
             end
+        )
+    }
+
+    fn short_reference(&self) -> String {
+        format!(
+            "{}{}, {} Cong.",
+            self.abbreviate_type(),
+            self.number,
+            self.congress.as_ordinal()
         )
     }
 }
@@ -382,5 +436,14 @@ mod test {
         let reference = legislation.reference();
 
         assert_eq!("H.R.870 – 118th Congress (2023-2024)", reference.as_str());
+    }
+
+    #[test]
+    fn test_full_cite() {
+        let expected = "H.R.870 – 118th Congress (2023-2024): ELON Act, H.R.870, 118th Cong. (2023), https://www.congress.gov/bill/118th-congress/house-bill/870.";
+        let legislation = Legislation::parse(&mut "118hr870").unwrap();
+        let result = legislation.full_cite(false).unwrap();
+
+        assert_eq!(expected, result);
     }
 }

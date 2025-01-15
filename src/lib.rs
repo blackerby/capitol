@@ -19,6 +19,7 @@ static CURRENT_YEAR: LazyLock<usize> = LazyLock::new(|| chrono::Utc::now().year(
 pub(crate) static CURRENT_CONGRESS: LazyLock<usize> =
     LazyLock::new(|| *CURRENT_YEAR - FIRST_CONGRESS / 2 + 1);
 pub(crate) const BASE_URL: &str = "https://www.congress.gov";
+pub(crate) const API_BASE_URL: &str = "https://api.congress.gov/v3";
 
 #[derive(Debug, PartialEq)]
 struct Congress<'s>(&'s str);
@@ -29,7 +30,7 @@ impl Display for Congress<'_> {
     }
 }
 
-impl Congress<'_> {
+impl<'s> Congress<'s> {
     fn as_ordinal(&self) -> String {
         if self.0.ends_with('1') {
             format!("{self}st")
@@ -49,6 +50,10 @@ impl Congress<'_> {
     fn years(&self) -> (usize, usize) {
         let second = self.to_number() * 2 + FIRST_CONGRESS - 1;
         (second - 1, second)
+    }
+
+    fn as_str(&self) -> &'s str {
+        self.0
     }
 }
 
@@ -77,6 +82,7 @@ trait AbbreviateType {
 
 trait Reference {
     fn reference(&self) -> String;
+    fn short_reference(&self) -> String;
 }
 
 trait Url {
