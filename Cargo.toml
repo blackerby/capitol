@@ -3,6 +3,7 @@ name = "capitol"
 version = "0.1.0"
 edition = "2021"
 description = "Parse citations of United States Congressional legislation"
+repository = "https://github.com/blackerby/capitol"
 license = "MIT"
 
 [dependencies]
