@@ -68,10 +68,6 @@ impl Display for Chamber {
     }
 }
 
-trait AbbreviateType {
-    fn abbreviate_type(&self) -> &str;
-}
-
 trait Url {
     fn to_url(&self, with_ver: bool) -> String;
 }

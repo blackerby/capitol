@@ -1,8 +1,7 @@
 // TODO: understand and improve Winnow errors
 
 use crate::{
-    parse_chamber, parse_congress, parse_positive_integer, AbbreviateType, Chamber, Congress, Url,
-    BASE_URL,
+    parse_chamber, parse_congress, parse_positive_integer, Chamber, Congress, Url, BASE_URL,
 };
 use std::fmt::Display;
 
@@ -59,25 +58,6 @@ struct Legislation<'s> {
     leg_type: LegislationType<'s>,
     number: &'s str,
     bill_version: Option<BillVersion<'s>>,
-}
-
-impl AbbreviateType for Legislation<'_> {
-    fn abbreviate_type(&self) -> &str {
-        match (&self.chamber, &self.leg_type) {
-            (Chamber::House, LegislationType::Bill(_)) => "H.R.",
-            (Chamber::House, LegislationType::Resolution(r)) => match r {
-                ResolutionType::Simple => "H.Res",
-                ResolutionType::Concurrent => "H.Con.Res",
-                ResolutionType::Joint => "H.J.Res",
-            },
-            (Chamber::Senate, LegislationType::Bill(_)) => "S.",
-            (Chamber::Senate, LegislationType::Resolution(r)) => match r {
-                ResolutionType::Simple => "S.Res",
-                ResolutionType::Concurrent => "S.Con.Res",
-                ResolutionType::Joint => "S.J.Res",
-            },
-        }
-    }
 }
 
 impl<'s> Legislation<'s> {
