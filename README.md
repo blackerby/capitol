@@ -16,3 +16,7 @@ Legislation {
 }
 ```
 Calling `to_url` on that struct return https://www.congress.gov/bill/118th-congress/house-bill/815.
+
+## Installation
+
+Capitol is available from crates.io.
