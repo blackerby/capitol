@@ -1,20 +1,10 @@
-// TODO: use this as a guide to generating string representation of legislation
-// https://www.congress.gov/help/citation-guide
-
 // TODO: understand and improve Winnow errors
 
-// TODO: citation style argument for `full_cite`
-// NOTE: APA, MLA, CMOS all need full date of introduction, not just year
-
 use crate::{
-    parse_chamber, parse_congress, parse_positive_integer, AbbreviateType, Chamber, Congress,
-    Reference, Url, API_BASE_URL, BASE_URL,
+    parse_chamber, parse_congress, parse_positive_integer, AbbreviateType, Chamber, Congress, Url,
+    BASE_URL,
 };
 use std::fmt::Display;
-
-use serde::Deserialize;
-// #[cfg(feature = "ureq")]
-use ureq;
 
 use winnow::{
     ascii::alpha0,
@@ -23,70 +13,11 @@ use winnow::{
     PResult, Parser,
 };
 
-#[derive(Deserialize)]
-struct Response {
-    bill: Bill,
-}
-
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct Bill {
-    title: String,
-    introduced_date: String,
-}
-
 const BILL_VERSIONS: [&str; 38] = [
     "as", "ash", "ath", "ats", "cdh", "cds", "cph", "cps", "eah", "eas", "eh", "enr", "es", "fph",
     "fps", "hds", "ih", "iph", "ips", "is", "lth", "lts", "pap", "pcs", "pp", "rch", "rcs", "rds",
     "rfh", "rfs", "rh", "rhuc", "rih", "rs", "rth", "rts", "sc", "",
 ];
-
-fn parse_legislation_type<'s>(input: &mut &'s str) -> PResult<LegislationType<'s>> {
-    let leg_type = alpha0.parse_next(input).map_err(ErrMode::cut)?;
-    match leg_type {
-        "e" | "res" => Ok(LegislationType::Resolution(ResolutionType::Simple)),
-        "c" | "cres" | "conres" => Ok(LegislationType::Resolution(ResolutionType::Concurrent)),
-        "j" | "jres" => Ok(LegislationType::Resolution(ResolutionType::Joint)),
-        "" | "r" => Ok(LegislationType::Bill(leg_type)),
-        _ => Err(ErrMode::Cut(ContextError::new())),
-    }
-}
-
-fn parse_bill_version<'s>(input: &mut &'s str) -> PResult<Option<BillVersion<'s>>> {
-    let bill_version = alt(BILL_VERSIONS).parse_next(input).map_err(ErrMode::cut)?;
-
-    if bill_version.is_empty() {
-        Ok(None)
-    } else {
-        Ok(Some(BillVersion(bill_version)))
-    }
-}
-
-fn parse_citation<'s>(input: &mut &'s str) -> PResult<Legislation<'s>> {
-    let (congress, chamber, leg_type, number, bill_version) = (
-        parse_congress,
-        parse_chamber,
-        parse_legislation_type,
-        parse_positive_integer,
-        parse_bill_version,
-    )
-        .parse_next(input)
-        .map_err(ErrMode::cut)?;
-
-    if let LegislationType::Bill("r") = leg_type {
-        if chamber == Chamber::Senate {
-            return Err(ErrMode::Cut(ContextError::new()));
-        }
-    }
-
-    Ok(Legislation {
-        congress,
-        chamber,
-        leg_type,
-        number,
-        bill_version,
-    })
-}
 
 #[derive(Debug, PartialEq)]
 enum ResolutionType {
@@ -151,58 +82,56 @@ impl AbbreviateType for Legislation<'_> {
 
 impl<'s> Legislation<'s> {
     fn parse(&mut input: &mut &'s str) -> anyhow::Result<Self> {
-        parse_citation
+        Self::parse_citation
             .parse(input)
             .map_err(|e| anyhow::format_err!("{e}"))
     }
 
-    fn full_cite(&self, with_ver: bool) -> anyhow::Result<String> {
-        // get title and year from introduced date
-        let congress = &self.congress.as_str();
-        // let bill_type = &self.leg_type;
-        let bill_number = &self.number;
-        // TODO: handle API key more appropriately (user set env var; default to `DEMO_KEY`)
-        // TODO: set API key as header
-        // TODO: better handle string representation of legislation types
-        // TODO: improve serde usage -- is Response necessary?
-        let url = format!("{API_BASE_URL}/bill/{congress}/hr/{bill_number}?api_key=DEMO_KEY");
-        let response: Response = ureq::get(url.as_str()).call()?.into_json()?;
-        let bill = response.bill;
-        let year = &bill.introduced_date[..4];
-
-        let citation = format!(
-            "{}: {}, {} ({}), {}.",
-            self.reference(),
-            bill.title,
-            self.short_reference(),
-            year,
-            self.to_url(with_ver)
-        );
-
-        Ok(citation)
-    }
-}
-
-impl Reference for Legislation<'_> {
-    fn reference(&self) -> String {
-        let (start, end) = self.congress.years();
-        format!(
-            "{}{} – {} Congress ({}-{})",
-            self.abbreviate_type(),
-            self.number,
-            self.congress.as_ordinal(),
-            start,
-            end
-        )
+    fn parse_legislation_type(input: &mut &'s str) -> PResult<LegislationType<'s>> {
+        let leg_type = alpha0.parse_next(input).map_err(ErrMode::cut)?;
+        match leg_type {
+            "e" | "res" => Ok(LegislationType::Resolution(ResolutionType::Simple)),
+            "c" | "cres" | "conres" => Ok(LegislationType::Resolution(ResolutionType::Concurrent)),
+            "j" | "jres" => Ok(LegislationType::Resolution(ResolutionType::Joint)),
+            "" | "r" => Ok(LegislationType::Bill(leg_type)),
+            _ => Err(ErrMode::Cut(ContextError::new())),
+        }
     }
 
-    fn short_reference(&self) -> String {
-        format!(
-            "{}{}, {} Cong.",
-            self.abbreviate_type(),
-            self.number,
-            self.congress.as_ordinal()
+    fn parse_bill_version(input: &mut &'s str) -> PResult<Option<BillVersion<'s>>> {
+        let bill_version = alt(BILL_VERSIONS).parse_next(input).map_err(ErrMode::cut)?;
+
+        if bill_version.is_empty() {
+            Ok(None)
+        } else {
+            Ok(Some(BillVersion(bill_version)))
+        }
+    }
+
+    fn parse_citation(input: &mut &'s str) -> PResult<Legislation<'s>> {
+        let (congress, chamber, leg_type, number, bill_version) = (
+            parse_congress,
+            parse_chamber,
+            Self::parse_legislation_type,
+            parse_positive_integer,
+            Self::parse_bill_version,
         )
+            .parse_next(input)
+            .map_err(ErrMode::cut)?;
+
+        if let LegislationType::Bill("r") = leg_type {
+            if chamber == Chamber::Senate {
+                return Err(ErrMode::Cut(ContextError::new()));
+            }
+        }
+
+        Ok(Legislation {
+            congress,
+            chamber,
+            leg_type,
+            number,
+            bill_version,
+        })
     }
 }
 
@@ -428,22 +357,5 @@ mod test {
             url,
             "https://www.congress.gov/bill/113rd-congress/senate-joint-resolution/230"
         );
-    }
-
-    #[test]
-    fn test_leg_reference() {
-        let legislation = Legislation::parse(&mut "118hr870").unwrap();
-        let reference = legislation.reference();
-
-        assert_eq!("H.R.870 – 118th Congress (2023-2024)", reference.as_str());
-    }
-
-    #[test]
-    fn test_full_cite() {
-        let expected = "H.R.870 – 118th Congress (2023-2024): ELON Act, H.R.870, 118th Cong. (2023), https://www.congress.gov/bill/118th-congress/house-bill/870.";
-        let legislation = Legislation::parse(&mut "118hr870").unwrap();
-        let result = legislation.full_cite(false).unwrap();
-
-        assert_eq!(expected, result);
     }
 }

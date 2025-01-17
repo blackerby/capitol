@@ -14,12 +14,13 @@ use winnow::{
 };
 
 pub(crate) const FIRST_CONGRESS: usize = 1789;
-#[allow(clippy::cast_sign_loss)] // only dealing with common era years
+// only dealing with common era years
+// Right to use UTC?
+#[allow(clippy::cast_sign_loss)]
 static CURRENT_YEAR: LazyLock<usize> = LazyLock::new(|| chrono::Utc::now().year() as usize);
 pub(crate) static CURRENT_CONGRESS: LazyLock<usize> =
     LazyLock::new(|| *CURRENT_YEAR - FIRST_CONGRESS / 2 + 1);
 pub(crate) const BASE_URL: &str = "https://www.congress.gov";
-pub(crate) const API_BASE_URL: &str = "https://api.congress.gov/v3";
 
 #[derive(Debug, PartialEq)]
 struct Congress<'s>(&'s str);
@@ -46,15 +47,6 @@ impl<'s> Congress<'s> {
     fn to_number(&self) -> usize {
         self.0.parse::<usize>().unwrap()
     }
-
-    fn years(&self) -> (usize, usize) {
-        let second = self.to_number() * 2 + FIRST_CONGRESS - 1;
-        (second - 1, second)
-    }
-
-    fn as_str(&self) -> &'s str {
-        self.0
-    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -78,11 +70,6 @@ impl Display for Chamber {
 
 trait AbbreviateType {
     fn abbreviate_type(&self) -> &str;
-}
-
-trait Reference {
-    fn reference(&self) -> String;
-    fn short_reference(&self) -> String;
 }
 
 trait Url {
@@ -142,20 +129,5 @@ mod test {
         let congress = Congress("116");
         let ordinal = congress.as_ordinal();
         assert_eq!("116th", ordinal);
-    }
-
-    #[test]
-    fn test_congress_to_number() {
-        let congress = Congress("119");
-        assert_eq!(119, congress.to_number());
-    }
-
-    #[test]
-    fn test_congress_years() {
-        let congress = Congress("119");
-        assert_eq!((2025, 2026), congress.years());
-
-        let congress = Congress("118");
-        assert_eq!((2023, 2024), congress.years());
     }
 }
