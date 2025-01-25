@@ -48,14 +48,25 @@ enum Chamber {
     Senate,
 }
 
-fn parse(input: &str) -> (Congress, Vec<u8>) {
+fn parse(input: &str) -> (Congress, Chamber, Vec<u8>) {
     let mut iter = input.as_bytes().iter().peekable();
     let mut congress_bytes: Vec<u8> = Vec::with_capacity(3);
+    let mut chamber = Chamber::House;
+    //let mut type_bytes: Vec<u8> = Vec::with_capacity(7);
     while let Some(&ch) = iter.next_if(|&&ch| ch > b'0' && ch <= b'9') {
         congress_bytes.push(ch);
     }
+    while let Some(&ch) = iter.next_if(|&&ch| ch == b'h' || ch == b'H' || ch == b's' || ch == b'S')
+    {
+        if ch == b'h' || ch == b'H' {
+            chamber = Chamber::House;
+        } else {
+            chamber = Chamber::Senate;
+        }
+    }
+
     let remainder: Vec<u8> = iter.map(|b| *b).collect();
-    (Congress(congress_bytes), remainder)
+    (Congress(congress_bytes), chamber, remainder)
 }
 
 #[cfg(test)]
@@ -65,7 +76,7 @@ mod test {
     #[test]
     fn test_parse_hand_rolled() {
         let mut input = "118hr8070";
-        let expected = (Congress(b"118".to_vec()), b"hr8070".to_vec());
+        let expected = (Congress(b"118".to_vec()), Chamber::House, b"r8070".to_vec());
         let result = parse(&mut input);
         assert_eq!(expected, result);
     }
