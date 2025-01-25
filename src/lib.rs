@@ -48,13 +48,14 @@ enum Chamber {
     Senate,
 }
 
-fn parse(input: &str) -> Congress {
-    let iter = input.as_bytes().iter();
-    let congress_string: Vec<u8> = iter
-        .take_while(|&&ch| ch > b'0' && ch <= b'9')
-        .cloned()
-        .collect();
-    Congress(congress_string)
+fn parse(input: &str) -> (Congress, Vec<u8>) {
+    let mut iter = input.as_bytes().iter().peekable();
+    let mut congress_bytes: Vec<u8> = Vec::with_capacity(3);
+    while let Some(&ch) = iter.next_if(|&&ch| ch > b'0' && ch <= b'9') {
+        congress_bytes.push(ch);
+    }
+    let remainder: Vec<u8> = iter.map(|b| *b).collect();
+    (Congress(congress_bytes), remainder)
 }
 
 #[cfg(test)]
@@ -64,7 +65,7 @@ mod test {
     #[test]
     fn test_parse_hand_rolled() {
         let mut input = "118hr8070";
-        let expected = Congress(b"118".to_vec());
+        let expected = (Congress(b"118".to_vec()), b"hr8070".to_vec());
         let result = parse(&mut input);
         assert_eq!(expected, result);
     }
