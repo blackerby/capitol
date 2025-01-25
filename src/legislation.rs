@@ -1,5 +1,3 @@
-// TODO: understand and improve Winnow errors
-
 #[allow(unused_imports)]
 use crate::{Chamber, Congress, BASE_URL};
 use std::fmt::Display;

@@ -7,13 +7,10 @@ use std::sync::LazyLock;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 pub(crate) const FIRST_CONGRESS: u64 = 1789;
-// only dealing with common era years
-// Right to use UTC?
-#[allow(clippy::cast_sign_loss)]
 static CURRENT_YEAR: LazyLock<u64> = LazyLock::new(|| {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
-        .unwrap()
+        .unwrap() // TODO: change to expect?
         .as_secs()
         / 31536000 // seconds in year
         + 1970 // UNIX_EPOCH year
