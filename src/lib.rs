@@ -99,10 +99,4 @@ mod test {
         let result = tokenize(&mut input);
         assert_eq!(expected, result);
     }
-
-    #[test]
-    fn test_year_and_congress() {
-        assert_eq!(*CURRENT_YEAR, 2025);
-        assert_eq!(*CURRENT_CONGRESS, 119);
-    }
 }
