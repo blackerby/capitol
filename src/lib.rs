@@ -204,7 +204,7 @@ impl Citation {
         let number = String::from_utf8(bytes.number)?.parse::<usize>()?;
         let ver = if let Some(v) = bytes.ver {
             if BILL_VERSIONS.contains(&v.as_slice()) {
-                let text = String::from_utf8(v).unwrap();
+                let text = String::from_utf8(v)?;
                 Some(Version(text))
             } else {
                 return Err(Error::InvalidBillVersion);
@@ -222,8 +222,7 @@ impl Citation {
         })
     }
 
-    #[must_use]
-    pub fn to_url(&self, with_ver: bool) -> String {
+    pub fn to_url(&self, with_ver: bool) -> Result<String> {
         let collection = match self.object_type {
             CongObjectType::HouseReport | CongObjectType::SenateReport => "congressional-report",
             _ => "bill",
@@ -237,11 +236,15 @@ impl Citation {
         );
 
         if with_ver {
-            base.push_str("/text/");
-            base.push_str(&self.ver.as_ref().unwrap().0);
+            if let Some(ver) = &self.ver {
+                base.push_str("/text/");
+                base.push_str(&ver.0);
+            } else {
+                return Err(Error::MissingBillVersion);
+            }
         }
 
-        base
+        Ok(base)
     }
 }
 
@@ -359,7 +362,7 @@ mod test {
         let input = "118hr529";
         let expected = "https://www.congress.gov/bill/118th-congress/house-bill/529";
         let citation = input.parse::<Citation>().unwrap();
-        let result = citation.to_url(false);
+        let result = citation.to_url(false).unwrap();
         assert_eq!(expected, result);
     }
 
@@ -369,7 +372,7 @@ mod test {
         let expected =
             "https://www.congress.gov/congressional-report/118th-congress/house-report/529";
         let citation = input.parse::<Citation>().unwrap();
-        let result = citation.to_url(false);
+        let result = citation.to_url(false).unwrap();
         assert_eq!(expected, result);
     }
 }

@@ -5,6 +5,7 @@ pub enum Error {
     FromUtf8(FromUtf8Error),
     ParseInt(ParseIntError),
     InvalidBillVersion,
+    MissingBillVersion,
     InvalidCongress,
     UnknownCongObjectType,
 }
