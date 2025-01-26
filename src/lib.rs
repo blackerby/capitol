@@ -1,9 +1,15 @@
 // TODO: add tests for each legislation type
 // TODO: add CLI
 // TODO: test sad path
+// TODO: impl FromStr for Citation?
 mod constants;
+mod error;
 
 use crate::constants::{BILL_VERSIONS, CURRENT_CONGRESS};
+use crate::error::Error;
+
+#[allow(dead_code)]
+type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug, PartialEq)]
 struct Version(String);
@@ -58,28 +64,28 @@ impl Chamber {
 
 #[derive(Debug, PartialEq)]
 enum CongObjectType {
-    S,
-    Hr,
-    SRes,
-    HRes,
-    SConRes,
-    HConRes,
-    SJRes,
-    HJRes,
+    SenateBill,
+    HouseBill,
+    SenateResolution,
+    HouseResolution,
+    SenateConcurrentResolution,
+    HouseConcurrentResolution,
+    SenateJointResolution,
+    HouseJointResolution,
     // TODO: add committee report types
 }
 
 impl CongObjectType {
     fn parse(input: &[u8], chamber: &Chamber) -> Self {
         match input.to_ascii_lowercase().as_slice() {
-            b"" | b"r" if *chamber == Chamber::House => Self::Hr,
-            b"" if *chamber == Chamber::Senate => Self::S,
-            b"res" if *chamber == Chamber::House => Self::HRes,
-            b"res" if *chamber == Chamber::Senate => Self::SRes,
-            b"conres" if *chamber == Chamber::House => Self::HConRes,
-            b"conres" if *chamber == Chamber::Senate => Self::SConRes,
-            b"jres" if *chamber == Chamber::House => Self::HJRes,
-            b"jres" if *chamber == Chamber::Senate => Self::SJRes,
+            b"" | b"r" if *chamber == Chamber::House => Self::HouseBill,
+            b"" if *chamber == Chamber::Senate => Self::SenateBill,
+            b"res" if *chamber == Chamber::House => Self::HouseResolution,
+            b"res" if *chamber == Chamber::Senate => Self::SenateResolution,
+            b"conres" if *chamber == Chamber::House => Self::HouseConcurrentResolution,
+            b"conres" if *chamber == Chamber::Senate => Self::SenateConcurrentResolution,
+            b"jres" if *chamber == Chamber::House => Self::HouseJointResolution,
+            b"jres" if *chamber == Chamber::Senate => Self::SenateJointResolution,
             _ => todo!(),
         }
     }
@@ -199,7 +205,7 @@ mod test {
         let expected = Citation {
             congress: Congress(118),
             chamber: Chamber::House,
-            object_type: CongObjectType::Hr,
+            object_type: CongObjectType::HouseBill,
             number: 8070,
             ver: None,
         };
