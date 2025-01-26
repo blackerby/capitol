@@ -1,14 +1,14 @@
 // TODO: add tests for each legislation type
 // TODO: add CLI
 // TODO: test sad path
-// TODO: impl FromStr for Citation?
 mod constants;
 mod error;
+
+use std::str::FromStr;
 
 use crate::constants::{BILL_VERSIONS, CURRENT_CONGRESS};
 use crate::error::Error;
 
-#[allow(dead_code)]
 type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug, PartialEq)]
@@ -27,21 +27,17 @@ struct CiteBytes {
 struct Congress(u64);
 
 impl Congress {
-    fn parse(input: &[u8]) -> Self {
+    fn parse(input: &[u8]) -> Result<Self> {
         match String::from_utf8(input.to_vec()) {
             Ok(s) => {
-                let congress = s
-                    .parse::<u64>()
-                    .expect("could not convert input to integer");
+                let congress = s.parse::<u64>()?;
                 if congress <= *CURRENT_CONGRESS {
-                    Congress(congress)
+                    Ok(Congress(congress))
                 } else {
-                    todo!()
+                    Err(Error::InvalidCongress)
                 }
             }
-            _ => {
-                todo!()
-            }
+            Err(e) => Err(Error::FromUtf8(e)),
         }
     }
 }
@@ -76,17 +72,17 @@ enum CongObjectType {
 }
 
 impl CongObjectType {
-    fn parse(input: &[u8], chamber: &Chamber) -> Self {
+    fn parse(input: &[u8], chamber: &Chamber) -> Result<Self> {
         match input.to_ascii_lowercase().as_slice() {
-            b"" | b"r" if *chamber == Chamber::House => Self::HouseBill,
-            b"" if *chamber == Chamber::Senate => Self::SenateBill,
-            b"res" if *chamber == Chamber::House => Self::HouseResolution,
-            b"res" if *chamber == Chamber::Senate => Self::SenateResolution,
-            b"conres" if *chamber == Chamber::House => Self::HouseConcurrentResolution,
-            b"conres" if *chamber == Chamber::Senate => Self::SenateConcurrentResolution,
-            b"jres" if *chamber == Chamber::House => Self::HouseJointResolution,
-            b"jres" if *chamber == Chamber::Senate => Self::SenateJointResolution,
-            _ => todo!(),
+            b"" | b"r" if *chamber == Chamber::House => Ok(Self::HouseBill),
+            b"" if *chamber == Chamber::Senate => Ok(Self::SenateBill),
+            b"res" if *chamber == Chamber::House => Ok(Self::HouseResolution),
+            b"res" if *chamber == Chamber::Senate => Ok(Self::SenateResolution),
+            b"conres" if *chamber == Chamber::House => Ok(Self::HouseConcurrentResolution),
+            b"conres" if *chamber == Chamber::Senate => Ok(Self::SenateConcurrentResolution),
+            b"jres" if *chamber == Chamber::House => Ok(Self::HouseJointResolution),
+            b"jres" if *chamber == Chamber::Senate => Ok(Self::SenateJointResolution),
+            _ => Err(Error::UnknownCongObjectType),
         }
     }
 }
@@ -150,34 +146,37 @@ impl Citation {
     }
 
     // TODO: convert this to a Result type with a custom error
-    #[must_use]
-    pub fn parse(input: &str) -> Self {
+    fn parse(input: &str) -> Result<Self> {
         let bytes = Self::tokenize(input);
-        let congress = Congress::parse(&bytes.congress);
+        let congress = Congress::parse(&bytes.congress)?;
         let chamber = Chamber::parse(bytes.chamber);
-        let object_type = CongObjectType::parse(&bytes.object_type, &chamber);
-        let number = String::from_utf8(bytes.number)
-            .unwrap()
-            .parse::<usize>()
-            .unwrap();
+        let object_type = CongObjectType::parse(&bytes.object_type, &chamber)?;
+        let number = String::from_utf8(bytes.number)?.parse::<usize>()?;
         let ver = if let Some(v) = bytes.ver {
             if BILL_VERSIONS.contains(&v.as_slice()) {
                 let text = String::from_utf8(v).unwrap();
                 Some(Version(text))
             } else {
-                todo!()
+                return Err(Error::InvalidBillVersion);
             }
         } else {
             None
         };
 
-        Citation {
+        Ok(Citation {
             congress,
             chamber,
             object_type,
             number,
             ver,
-        }
+        })
+    }
+}
+
+impl FromStr for Citation {
+    type Err = Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::parse(s)
     }
 }
 
@@ -209,8 +208,8 @@ mod test {
             number: 8070,
             ver: None,
         };
-        let result = Citation::parse(input);
-        assert_eq!(expected, result);
+        let result = Citation::from_str(input);
+        assert_eq!(expected, result.unwrap());
     }
 
     #[test]
