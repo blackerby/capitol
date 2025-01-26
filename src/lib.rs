@@ -1,8 +1,5 @@
 #![allow(dead_code)]
 
-mod legislation;
-
-//use std::fmt::Display;
 use std::sync::LazyLock;
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -18,6 +15,12 @@ static CURRENT_YEAR: LazyLock<u64> = LazyLock::new(|| {
 pub(crate) static CURRENT_CONGRESS: LazyLock<u64> =
     LazyLock::new(|| (*CURRENT_YEAR - FIRST_CONGRESS) / 2 + 1);
 pub(crate) const BASE_URL: &str = "https://www.congress.gov";
+
+const BILL_VERSIONS: [&str; 38] = [
+    "as", "ash", "ath", "ats", "cdh", "cds", "cph", "cps", "eah", "eas", "eh", "enr", "es", "fph",
+    "fps", "hds", "ih", "iph", "ips", "is", "lth", "lts", "pap", "pcs", "pp", "rch", "rcs", "rds",
+    "rfh", "rfs", "rh", "rhuc", "rih", "rs", "rth", "rts", "sc", "",
+];
 
 #[derive(Debug, PartialEq)]
 struct Congress(Vec<u8>);
