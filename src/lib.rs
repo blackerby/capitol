@@ -24,7 +24,7 @@ const BILL_VERSIONS: [&str; 37] = [
 ];
 
 #[derive(Debug, PartialEq)]
-struct Version<'s>(&'s str);
+struct Version(String);
 
 #[derive(Debug, Default, PartialEq)]
 struct CiteBytes {
@@ -83,23 +83,32 @@ enum CongObjectType {
     // TODO: add committee report types
 }
 
-//impl CongObjectType {
-//    fn parse(input: Vec<u8>, chamber: Chamber) -> Self {
-//        match input {
-//        }
-//    }
-//}
+impl CongObjectType {
+    fn parse(input: Vec<u8>, chamber: &Chamber) -> Self {
+        match input.to_ascii_lowercase().as_slice() {
+            b"" | b"r" if *chamber == Chamber::House => Self::Hr,
+            b"" if *chamber == Chamber::Senate => Self::S,
+            b"res" if *chamber == Chamber::House => Self::HRes,
+            b"res" if *chamber == Chamber::Senate => Self::SRes,
+            b"conres" if *chamber == Chamber::House => Self::HConRes,
+            b"conres" if *chamber == Chamber::Senate => Self::SConRes,
+            b"jres" if *chamber == Chamber::House => Self::HJRes,
+            b"jres" if *chamber == Chamber::Senate => Self::SJRes,
+            _ => todo!(),
+        }
+    }
+}
 
 #[derive(Debug, PartialEq)]
-struct Citation<'s> {
+struct Citation {
     congress: Congress,
     chamber: Chamber,
     object_type: CongObjectType,
     number: usize,
-    ver: Option<Version<'s>>,
+    ver: Option<Version>,
 }
 
-impl Citation<'_> {
+impl Citation {
     pub fn tokenize(input: &str) -> CiteBytes {
         let mut iter = input.as_bytes().iter().peekable();
 
@@ -148,10 +157,30 @@ impl Citation<'_> {
         parts
     }
 
-    //pub fn parse(input: CiteBytes) -> Self {
-    //    let congress = Congress::parse(input.congress);
-    //    let chamber = Chamber::parse(input.chamber);
-    //}
+    pub fn parse(input: &str) -> Self {
+        let bytes = Self::tokenize(input);
+        let congress = Congress::parse(bytes.congress);
+        let chamber = Chamber::parse(bytes.chamber);
+        let object_type = CongObjectType::parse(bytes.object_type, &chamber);
+        let number = String::from_utf8(bytes.number)
+            .unwrap()
+            .parse::<usize>()
+            .unwrap();
+        let ver = if let Some(v) = bytes.ver {
+            let text = String::from_utf8(v).unwrap();
+            Some(Version(text))
+        } else {
+            None
+        };
+
+        Citation {
+            congress,
+            chamber,
+            object_type,
+            number,
+            ver,
+        }
+    }
 }
 
 #[cfg(test)]
@@ -169,6 +198,20 @@ mod test {
             ver: None,
         };
         let result = Citation::tokenize(&mut input);
+        assert_eq!(expected, result);
+    }
+
+    #[test]
+    fn test_parse_no_ver_house_bill() {
+        let input = "118hr8070";
+        let expected = Citation {
+            congress: Congress(118),
+            chamber: Chamber::House,
+            object_type: CongObjectType::Hr,
+            number: 8070,
+            ver: None,
+        };
+        let result = Citation::parse(input);
         assert_eq!(expected, result);
     }
 
