@@ -1,10 +1,11 @@
-#![allow(dead_code)]
 // TODO: add tests for each legislation type
+// TODO: add CLI
+// TODO: test sad path
 
 use std::sync::LazyLock;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-pub(crate) const FIRST_CONGRESS: u64 = 1789;
+const FIRST_CONGRESS: u64 = 1789;
 static CURRENT_YEAR: LazyLock<u64> = LazyLock::new(|| {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -13,15 +14,14 @@ static CURRENT_YEAR: LazyLock<u64> = LazyLock::new(|| {
         / 31536000 // seconds in year
         + 1970 // UNIX_EPOCH year
 });
-pub(crate) static CURRENT_CONGRESS: LazyLock<u64> =
-    LazyLock::new(|| (*CURRENT_YEAR - FIRST_CONGRESS) / 2 + 1);
-pub(crate) const BASE_URL: &str = "https://www.congress.gov";
+static CURRENT_CONGRESS: LazyLock<u64> = LazyLock::new(|| (*CURRENT_YEAR - FIRST_CONGRESS) / 2 + 1);
+//const BASE_URL: &str = "https://www.congress.gov";
 
-const BILL_VERSIONS: [&str; 37] = [
-    "as", "ash", "ath", "ats", "cdh", "cds", "cph", "cps", "eah", "eas", "eh", "enr", "es", "fph",
-    "fps", "hds", "ih", "iph", "ips", "is", "lth", "lts", "pap", "pcs", "pp", "rch", "rcs", "rds",
-    "rfh", "rfs", "rh", "rhuc", "rih", "rs", "rth", "rts", "sc",
-];
+//const BILL_VERSIONS: [&str; 37] = [
+//    "as", "ash", "ath", "ats", "cdh", "cds", "cph", "cps", "eah", "eas", "eh", "enr", "es", "fph",
+//    "fps", "hds", "ih", "iph", "ips", "is", "lth", "lts", "pap", "pcs", "pp", "rch", "rcs", "rds",
+//    "rfh", "rfs", "rh", "rhuc", "rih", "rs", "rth", "rts", "sc",
+//];
 
 #[derive(Debug, PartialEq)]
 struct Version(String);
@@ -45,7 +45,11 @@ impl Congress {
                 let congress = s
                     .parse::<u64>()
                     .expect("could not convert input to integer");
-                Congress(congress)
+                if congress <= *CURRENT_CONGRESS {
+                    Congress(congress)
+                } else {
+                    todo!()
+                }
             }
             _ => {
                 todo!()
@@ -100,7 +104,7 @@ impl CongObjectType {
 }
 
 #[derive(Debug, PartialEq)]
-struct Citation {
+pub struct Citation {
     congress: Congress,
     chamber: Chamber,
     object_type: CongObjectType,
@@ -109,7 +113,7 @@ struct Citation {
 }
 
 impl Citation {
-    pub fn tokenize(input: &str) -> CiteBytes {
+    fn tokenize(input: &str) -> CiteBytes {
         let mut iter = input.as_bytes().iter().peekable();
 
         // initialize containers for various parts of the citation
