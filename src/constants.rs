@@ -12,7 +12,7 @@ static CURRENT_YEAR: LazyLock<u64> = LazyLock::new(|| {
 });
 pub static CURRENT_CONGRESS: LazyLock<u64> =
     LazyLock::new(|| (*CURRENT_YEAR - FIRST_CONGRESS) / 2 + 1);
-//const BASE_URL: &str = "https://www.congress.gov";
+pub const BASE_URL: &str = "https://www.congress.gov";
 
 pub const BILL_VERSIONS: [&[u8]; 37] = [
     b"as", b"ash", b"ath", b"ats", b"cdh", b"cds", b"cph", b"cps", b"eah", b"eas", b"eh", b"enr",

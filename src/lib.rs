@@ -1,12 +1,10 @@
-// TODO: add tests for each legislation type
-// TODO: add CLI
-// TODO: test sad path
 mod constants;
 mod error;
 
+use std::fmt::Display;
 use std::str::FromStr;
 
-use crate::constants::{BILL_VERSIONS, CURRENT_CONGRESS};
+use crate::constants::{BASE_URL, BILL_VERSIONS, CURRENT_CONGRESS};
 use crate::error::Error;
 
 type Result<T> = std::result::Result<T, Error>;
@@ -40,12 +38,45 @@ impl Congress {
             Err(e) => Err(Error::FromUtf8(e)),
         }
     }
+
+    fn as_ordinal(&self) -> String {
+        let mut ordinal = self.to_string();
+        if ordinal.ends_with('1') {
+            ordinal.push_str("st");
+        } else if ordinal.ends_with('2') {
+            ordinal.push_str("nd");
+        } else if ordinal.ends_with('3') {
+            ordinal.push_str("rd");
+        } else {
+            ordinal.push_str("th");
+        }
+        ordinal
+    }
+}
+
+impl Display for Congress {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
 }
 
 #[derive(Debug, PartialEq)]
 enum Chamber {
     House,
     Senate,
+}
+
+impl Display for Chamber {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Self::House => "house",
+                Self::Senate => "senate",
+            }
+        )
+    }
 }
 
 impl Chamber {
@@ -87,6 +118,23 @@ impl CongObjectType {
             b"rpt" if *chamber == Chamber::Senate => Ok(Self::SenateReport),
             _ => Err(Error::UnknownCongObjectType),
         }
+    }
+}
+
+impl Display for CongObjectType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Self::HouseBill | Self::SenateBill => "bill",
+                Self::HouseResolution | Self::SenateResolution => "resolution",
+                Self::HouseConcurrentResolution | Self::SenateConcurrentResolution =>
+                    "concurrent-resolution",
+                Self::HouseJointResolution | Self::SenateJointResolution => "joint-resolution",
+                Self::HouseReport | Self::SenateReport => "report",
+            }
+        )
     }
 }
 
@@ -172,6 +220,28 @@ impl Citation {
             number,
             ver,
         })
+    }
+
+    #[must_use]
+    pub fn to_url(&self, with_ver: bool) -> String {
+        let collection = match self.object_type {
+            CongObjectType::HouseReport | CongObjectType::SenateReport => "congressional-report",
+            _ => "bill",
+        };
+        let mut base = format!(
+            "{BASE_URL}/{collection}/{}-congress/{}-{}/{}",
+            self.congress.as_ordinal(),
+            self.chamber,
+            self.object_type,
+            self.number
+        );
+
+        if with_ver {
+            base.push_str("/text/");
+            base.push_str(&self.ver.as_ref().unwrap().0);
+        }
+
+        base
     }
 }
 
@@ -281,6 +351,25 @@ mod test {
             ver: Some(b"is".to_vec()),
         };
         let result = Citation::tokenize(&mut input);
+        assert_eq!(expected, result);
+    }
+
+    #[test]
+    fn test_house_bill_to_url() {
+        let input = "118hr529";
+        let expected = "https://www.congress.gov/bill/118th-congress/house-bill/529";
+        let citation = input.parse::<Citation>().unwrap();
+        let result = citation.to_url(false);
+        assert_eq!(expected, result);
+    }
+
+    #[test]
+    fn test_house_report_to_url() {
+        let input = "118hrpt529";
+        let expected =
+            "https://www.congress.gov/congressional-report/118th-congress/house-report/529";
+        let citation = input.parse::<Citation>().unwrap();
+        let result = citation.to_url(false);
         assert_eq!(expected, result);
     }
 }
