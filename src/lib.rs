@@ -40,51 +40,56 @@ enum Chamber {
     Senate,
 }
 
-fn tokenize(input: &str) -> CiteBytes {
-    let mut iter = input.as_bytes().iter().peekable();
+struct Capitol;
 
-    // initialize containers for various parts of the citation
-    let mut congress_bytes: Vec<u8> = Vec::with_capacity(3);
-    let mut type_bytes: Vec<u8> = Vec::with_capacity(7);
-    let mut number_bytes: Vec<u8> = Vec::new();
-    let mut ver_bytes: Vec<u8> = Vec::new();
+impl Capitol {
+    pub fn tokenize(input: &str) -> CiteBytes {
+        let mut iter = input.as_bytes().iter().peekable();
 
-    // initialize parts container
-    let mut parts = CiteBytes::default();
+        // initialize containers for various parts of the citation
+        let mut congress_bytes: Vec<u8> = Vec::with_capacity(3);
+        let mut type_bytes: Vec<u8> = Vec::with_capacity(7);
+        let mut number_bytes: Vec<u8> = Vec::new();
+        let mut ver_bytes: Vec<u8> = Vec::new();
 
-    while let Some(&ch) = iter.next_if(|&&ch| ch > b'0' && ch <= b'9') {
-        congress_bytes.push(ch);
+        // initialize parts container
+        let mut parts = CiteBytes::default();
+
+        while let Some(&ch) = iter.next_if(|&&ch| ch > b'0' && ch <= b'9') {
+            congress_bytes.push(ch);
+        }
+
+        parts.congress = congress_bytes.clone();
+
+        if let Some(&ch) = iter.next_if(|&&ch| ch == b'h' || ch == b'H' || ch == b's' || ch == b'S')
+        {
+            parts.chamber = ch;
+        }
+
+        while let Some(&ch) = iter.next_if(|&&ch| ch.is_ascii_alphabetic()) {
+            type_bytes.push(ch);
+        }
+
+        parts.object_type = type_bytes;
+
+        while let Some(&ch) = iter.next_if(|&&ch| ch.is_ascii_digit()) {
+            number_bytes.push(ch);
+        }
+
+        parts.number = number_bytes;
+
+        while let Some(&ch) = iter.next_if(|&&ch| ch.is_ascii_alphabetic()) {
+            ver_bytes.push(ch);
+        }
+
+        if ver_bytes.is_empty() {
+            parts.ver = None;
+        } else {
+            parts.ver = Some(ver_bytes);
+        }
+
+        parts
     }
-
-    parts.congress = congress_bytes.clone();
-
-    if let Some(&ch) = iter.next_if(|&&ch| ch == b'h' || ch == b'H' || ch == b's' || ch == b'S') {
-        parts.chamber = ch;
-    }
-
-    while let Some(&ch) = iter.next_if(|&&ch| ch.is_ascii_alphabetic()) {
-        type_bytes.push(ch);
-    }
-
-    parts.object_type = type_bytes;
-
-    while let Some(&ch) = iter.next_if(|&&ch| ch.is_ascii_digit()) {
-        number_bytes.push(ch);
-    }
-
-    parts.number = number_bytes;
-
-    while let Some(&ch) = iter.next_if(|&&ch| ch.is_ascii_alphabetic()) {
-        ver_bytes.push(ch);
-    }
-
-    if ver_bytes.is_empty() {
-        parts.ver = None;
-    } else {
-        parts.ver = Some(ver_bytes);
-    }
-
-    parts
 }
 
 #[cfg(test)]
@@ -101,7 +106,7 @@ mod test {
             number: b"8070".to_vec(),
             ver: None,
         };
-        let result = tokenize(&mut input);
+        let result = Capitol::tokenize(&mut input);
         assert_eq!(expected, result);
     }
 
@@ -115,7 +120,7 @@ mod test {
             number: b"8070".to_vec(),
             ver: Some(b"ih".to_vec()),
         };
-        let result = tokenize(&mut input);
+        let result = Capitol::tokenize(&mut input);
         assert_eq!(expected, result);
     }
 }
