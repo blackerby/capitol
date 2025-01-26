@@ -7,7 +7,7 @@ static CURRENT_YEAR: LazyLock<u64> = LazyLock::new(|| {
         .duration_since(UNIX_EPOCH)
         .unwrap() // TODO: change to expect?
         .as_secs()
-        / 31536000 // seconds in year
+        / 31_536_000 // seconds in year
         + 1970 // UNIX_EPOCH year
 });
 pub static CURRENT_CONGRESS: LazyLock<u64> =

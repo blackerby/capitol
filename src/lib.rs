@@ -21,8 +21,8 @@ struct CiteBytes {
 struct Congress(u64);
 
 impl Congress {
-    fn parse(input: Vec<u8>) -> Self {
-        match String::from_utf8(input) {
+    fn parse(input: &[u8]) -> Self {
+        match String::from_utf8(input.to_vec()) {
             Ok(s) => {
                 let congress = s
                     .parse::<u64>()
@@ -48,7 +48,7 @@ enum Chamber {
 
 impl Chamber {
     fn parse(input: u8) -> Self {
-        if input.to_ascii_lowercase() == b'h' {
+        if input.eq_ignore_ascii_case(&b'h') {
             Self::House
         } else {
             Self::Senate
@@ -70,7 +70,7 @@ enum CongObjectType {
 }
 
 impl CongObjectType {
-    fn parse(input: Vec<u8>, chamber: &Chamber) -> Self {
+    fn parse(input: &[u8], chamber: &Chamber) -> Self {
         match input.to_ascii_lowercase().as_slice() {
             b"" | b"r" if *chamber == Chamber::House => Self::Hr,
             b"" if *chamber == Chamber::Senate => Self::S,
@@ -111,7 +111,7 @@ impl Citation {
             congress_bytes.push(ch);
         }
 
-        parts.congress = congress_bytes.clone();
+        parts.congress.clone_from(&congress_bytes);
 
         if let Some(&ch) = iter.next_if(|&&ch| ch == b'h' || ch == b'H' || ch == b's' || ch == b'S')
         {
@@ -144,11 +144,12 @@ impl Citation {
     }
 
     // TODO: convert this to a Result type with a custom error
+    #[must_use]
     pub fn parse(input: &str) -> Self {
         let bytes = Self::tokenize(input);
-        let congress = Congress::parse(bytes.congress);
+        let congress = Congress::parse(&bytes.congress);
         let chamber = Chamber::parse(bytes.chamber);
-        let object_type = CongObjectType::parse(bytes.object_type, &chamber);
+        let object_type = CongObjectType::parse(&bytes.object_type, &chamber);
         let number = String::from_utf8(bytes.number)
             .unwrap()
             .parse::<usize>()
