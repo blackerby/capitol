@@ -68,7 +68,8 @@ enum CongObjectType {
     HouseConcurrentResolution,
     SenateJointResolution,
     HouseJointResolution,
-    // TODO: add committee report types
+    HouseReport,
+    SenateReport,
 }
 
 impl CongObjectType {
@@ -82,6 +83,8 @@ impl CongObjectType {
             b"conres" if *chamber == Chamber::Senate => Ok(Self::SenateConcurrentResolution),
             b"jres" if *chamber == Chamber::House => Ok(Self::HouseJointResolution),
             b"jres" if *chamber == Chamber::Senate => Ok(Self::SenateJointResolution),
+            b"rpt" if *chamber == Chamber::House => Ok(Self::HouseReport),
+            b"rpt" if *chamber == Chamber::Senate => Ok(Self::SenateReport),
             _ => Err(Error::UnknownCongObjectType),
         }
     }
@@ -145,7 +148,6 @@ impl Citation {
         parts
     }
 
-    // TODO: convert this to a Result type with a custom error
     fn parse(input: &str) -> Result<Self> {
         let bytes = Self::tokenize(input);
         let congress = Congress::parse(&bytes.congress)?;
@@ -208,7 +210,35 @@ mod test {
             number: 8070,
             ver: None,
         };
-        let result = Citation::from_str(input);
+        let result = input.parse();
+        assert_eq!(expected, result.unwrap());
+    }
+
+    #[test]
+    fn test_parse_house_bill() {
+        let input = "118hrpt529";
+        let expected = Citation {
+            congress: Congress(118),
+            chamber: Chamber::House,
+            object_type: CongObjectType::HouseReport,
+            number: 529,
+            ver: None,
+        };
+        let result = input.parse();
+        assert_eq!(expected, result.unwrap());
+    }
+
+    #[test]
+    fn test_parse_senate_bill() {
+        let input = "118srpt17";
+        let expected = Citation {
+            congress: Congress(118),
+            chamber: Chamber::Senate,
+            object_type: CongObjectType::SenateReport,
+            number: 17,
+            ver: None,
+        };
+        let result = input.parse();
         assert_eq!(expected, result.unwrap());
     }
 
