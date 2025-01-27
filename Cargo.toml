@@ -1,12 +1,7 @@
 [package]
 name = "capitol"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
-description = "Parse citations of United States Congressional legislation"
+description = "Parse United States Congress legislative document citations"
 repository = "https://github.com/blackerby/capitol"
 license = "MIT"
-
-[dependencies]
-anyhow = "1.0.95"
-chrono = "0.4.39"
-winnow = "0.6.22"

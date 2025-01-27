@@ -5,14 +5,14 @@ This project is in its earliest stage of development, but potential future uses 
 - a polars extension for parsing GPO package ids returned via the GovInfo API into Congress.gov URLs
 - a typst extension for citing Congressional legislation and hyperlinking to referenced bills
 
-As of this writing, only citations for bills and resolutions from either chamber are implemented. For example, calling `Legislation::parse` with the argument `118hr815` returns this Rust struct:
+As of this writing, only citations for bills and resolutions and commitee reports from either chamber are implemented. For example, calling `Citation::parse` with the argument `118hr815` returns this Rust struct:
 ```rust
-Legislation {
-    congress: Congress("118"),
+Citation {
+    congress: Congress(118),
     chamber: Chamber::House,
-    leg_type: LegislationType::Bill("r"),
-    number: "815",
-    bill_version: None
+    object_type: CongObjectType::HouseBill,
+    number: 815,
+    ver: None
 }
 ```
 Calling `to_url` on that struct return https://www.congress.gov/bill/118th-congress/house-bill/815.
