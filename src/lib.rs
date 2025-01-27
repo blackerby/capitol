@@ -1,3 +1,4 @@
+// TODO: getters for Citation
 #![warn(missing_docs)]
 //! Parse citations of United States Congress legislative documents and convert them to
 //! Congress.gov URLs.
