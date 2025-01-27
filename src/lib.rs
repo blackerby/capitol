@@ -1,3 +1,15 @@
+#![warn(missing_docs)]
+//! Parse citations of United States Congress legislative documents and convert them to
+//! Congress.gov URLs.
+//!
+//! Calling `parse` on a string like `"118hr815"`, or calling `Citation::parse("118hr815")`
+//! returns a struct representing the document's citation. Calling `to_url` on such a struct
+//! returns `"https://www.congress.gov/bill/118th-congress/house-bill/815"`
+//!
+//! Legislative citations generally follow the form `<CONGRESS><CONGRESSIONAL_OBJECT_TYPE><NUMBER>`.
+//! Measures (bills) can specify a version of the text of the bill with a two-to-three letter
+//! string at the end of the citation.
+
 mod constants;
 mod error;
 
@@ -138,6 +150,10 @@ impl Display for CongObjectType {
     }
 }
 
+/// Represents a legislative Citation.
+///
+/// A `Citation` consists of a Congress, a Chamber, a Congressional object type, a number, and
+/// optionally for bills, a Version.
 #[derive(Debug, PartialEq)]
 pub struct Citation {
     congress: Congress,
@@ -196,7 +212,26 @@ impl Citation {
         parts
     }
 
-    fn parse(input: &str) -> Result<Self> {
+    /// Parse a legislative citation.
+    ///
+    /// The method first breaks up the citation into its constituent parts, then parses each of the
+    /// parts, validating that the given Congress does not exceed the current Congress.
+    ///
+    /// Example
+    ///
+    /// ```rust
+    /// use capitol::Citation;
+    ///
+    /// let citation = Citation::parse("118hr815");
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// Will result in an error if the Congress part of the citation is invalid (greater than the
+    /// current Congress), if the Congressional object type is unrecognized, if an integer can't be
+    /// parsed from the document number, or if the document is a bill and has an unrecognized
+    /// version type.
+    pub fn parse(input: &str) -> Result<Self> {
         let bytes = Self::tokenize(input);
         let congress = Congress::parse(&bytes.congress)?;
         let chamber = Chamber::parse(bytes.chamber);
@@ -222,7 +257,16 @@ impl Citation {
         })
     }
 
-    pub fn to_url(&self, with_ver: bool) -> Result<String> {
+    /// Converts a `Citation` to a URL on Congress.gov.
+    ///
+    /// Example
+    ///
+    /// ```rust
+    /// use capitol::Citation;
+    ///
+    /// let url = "118hr815".parse::<Citation>().unwrap().to_url();
+    /// ```
+    pub fn to_url(&self) -> String {
         let collection = match self.object_type {
             CongObjectType::HouseReport | CongObjectType::SenateReport => "congressional-report",
             _ => "bill",
@@ -235,16 +279,12 @@ impl Citation {
             self.number
         );
 
-        if with_ver {
-            if let Some(ver) = &self.ver {
-                base.push_str("/text/");
-                base.push_str(&ver.0);
-            } else {
-                return Err(Error::MissingBillVersion);
-            }
+        if let Some(ver) = &self.ver {
+            base.push_str("/text/");
+            base.push_str(&ver.0);
         }
 
-        Ok(base)
+        base
     }
 }
 
@@ -362,7 +402,16 @@ mod test {
         let input = "118hr529";
         let expected = "https://www.congress.gov/bill/118th-congress/house-bill/529";
         let citation = input.parse::<Citation>().unwrap();
-        let result = citation.to_url(false).unwrap();
+        let result = citation.to_url();
+        assert_eq!(expected, result);
+    }
+
+    #[test]
+    fn test_house_bill_with_ver_to_url() {
+        let input = "118hr529ih";
+        let expected = "https://www.congress.gov/bill/118th-congress/house-bill/529/text/ih";
+        let citation = input.parse::<Citation>().unwrap();
+        let result = citation.to_url();
         assert_eq!(expected, result);
     }
 
@@ -372,7 +421,7 @@ mod test {
         let expected =
             "https://www.congress.gov/congressional-report/118th-congress/house-report/529";
         let citation = input.parse::<Citation>().unwrap();
-        let result = citation.to_url(false).unwrap();
+        let result = citation.to_url();
         assert_eq!(expected, result);
     }
 }

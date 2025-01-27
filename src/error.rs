@@ -5,7 +5,6 @@ pub enum Error {
     FromUtf8(FromUtf8Error),
     ParseInt(ParseIntError),
     InvalidBillVersion,
-    MissingBillVersion,
     InvalidCongress,
     UnknownCongObjectType,
 }
@@ -16,9 +15,6 @@ impl Display for Error {
             Self::FromUtf8(e) => Display::fmt(e, f),
             Self::ParseInt(e) => Display::fmt(e, f),
             Self::InvalidBillVersion => f.write_str("not a valid bill version"),
-            Self::MissingBillVersion => {
-                f.write_str("url with bill version requested but no version given")
-            }
             Self::InvalidCongress => {
                 f.write_str("congress number in citation has not occurred yet")
             }
