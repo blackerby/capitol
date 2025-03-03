@@ -258,6 +258,29 @@ impl Citation {
         })
     }
 
+    /// Get the citation's version.
+    ///
+    /// Returns `None` if the citation has no version.
+    ///
+    /// Example
+    ///
+    /// ```rust
+    /// use capitol::Citation;
+    ///
+    /// let citation = Citation::parse("118hr815ih").unwrap();
+    /// assert_eq!(Some("ih"), citation.version());
+    ///
+    /// let citation = Citation::parse("118hr815").unwrap();
+    /// assert_eq!(None, citation.version());
+    /// ```
+    pub fn version(&self) -> Option<&str> {
+        if let Some(version) = &self.ver {
+            Some(&version.0)
+        } else {
+            None
+        }
+    }
+
     /// Converts a `Citation` to a URL on Congress.gov.
     ///
     /// Example
@@ -423,6 +446,15 @@ mod test {
             "https://www.congress.gov/congressional-report/118th-congress/house-report/529";
         let citation = input.parse::<Citation>().unwrap();
         let result = citation.to_url();
+        assert_eq!(expected, result);
+    }
+
+    #[test]
+    fn test_get_version() {
+        let input = "118hr529ih";
+        let expected = Some("ih");
+        let citation = input.parse::<Citation>().unwrap();
+        let result = citation.version();
         assert_eq!(expected, result);
     }
 }
