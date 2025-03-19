@@ -114,6 +114,8 @@ enum CongObjectType {
     HouseJointResolution,
     HouseReport,
     SenateReport,
+    HousePrint,
+    SenatePrint,
 }
 
 impl CongObjectType {
@@ -129,6 +131,8 @@ impl CongObjectType {
             b"jres" if *chamber == Chamber::Senate => Ok(Self::SenateJointResolution),
             b"rpt" if *chamber == Chamber::House => Ok(Self::HouseReport),
             b"rpt" if *chamber == Chamber::Senate => Ok(Self::SenateReport),
+            b"prt" if *chamber == Chamber::House => Ok(Self::HousePrint),
+            b"prt" if *chamber == Chamber::Senate => Ok(Self::SenatePrint),
             _ => Err(Error::UnknownCongObjectType),
         }
     }
@@ -146,6 +150,7 @@ impl Display for CongObjectType {
                     "concurrent-resolution",
                 Self::HouseJointResolution | Self::SenateJointResolution => "joint-resolution",
                 Self::HouseReport | Self::SenateReport => "report",
+                Self::HousePrint | Self::SenatePrint => "committee-print",
             }
         )
     }
@@ -293,6 +298,7 @@ impl Citation {
     pub fn to_url(&self) -> String {
         let collection = match self.object_type {
             CongObjectType::HouseReport | CongObjectType::SenateReport => "congressional-report",
+            CongObjectType::HousePrint | CongObjectType::SenatePrint => "committee-print",
             _ => "bill",
         };
         let mut base = format!(
@@ -359,6 +365,34 @@ mod test {
             chamber: Chamber::House,
             object_type: CongObjectType::HouseReport,
             number: 529,
+            ver: None,
+        };
+        let result = input.parse();
+        assert_eq!(expected, result.unwrap());
+    }
+
+    #[test]
+    fn test_parse_house_print() {
+        let input = "119hprt58246";
+        let expected = Citation {
+            congress: Congress(119),
+            chamber: Chamber::House,
+            object_type: CongObjectType::HousePrint,
+            number: 58246,
+            ver: None,
+        };
+        let result = input.parse();
+        assert_eq!(expected, result.unwrap());
+    }
+
+    #[test]
+    fn test_parse_senate_print() {
+        let input = "119sprt57246";
+        let expected = Citation {
+            congress: Congress(119),
+            chamber: Chamber::Senate,
+            object_type: CongObjectType::SenatePrint,
+            number: 57246,
             ver: None,
         };
         let result = input.parse();
@@ -444,6 +478,26 @@ mod test {
         let input = "118hrpt529";
         let expected =
             "https://www.congress.gov/congressional-report/118th-congress/house-report/529";
+        let citation = input.parse::<Citation>().unwrap();
+        let result = citation.to_url();
+        assert_eq!(expected, result);
+    }
+
+    #[test]
+    fn test_house_print_to_url() {
+        let input = "119hprt58246";
+        let expected =
+            "https://www.congress.gov/committee-print/119th-congress/house-committee-print/58246";
+        let citation = input.parse::<Citation>().unwrap();
+        let result = citation.to_url();
+        assert_eq!(expected, result);
+    }
+
+    #[test]
+    fn test_senate_print_to_url() {
+        let input = "119sprt57246";
+        let expected =
+            "https://www.congress.gov/committee-print/119th-congress/senate-committee-print/57246";
         let citation = input.parse::<Citation>().unwrap();
         let result = citation.to_url();
         assert_eq!(expected, result);
