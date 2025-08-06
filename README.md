@@ -1,3 +1,4 @@
+# Migrated to https://codeberg.org/blackerby/capitol
 # Capitol
 Capitol is a Rust library for converting citation strings for United States Congressional documents of the form `<Congress><ObjectType><ObjectNumber>`, e.g., `118hr815` representing the H.R.815 in the 118th Congress, into Rust types. These Rust types can be printed as Congress.gov URLs.
 
